@@ -1,0 +1,39 @@
+/* Mobile-only landscape mode for interview pages */
+@media (max-width: 767px) and (orientation: portrait) {
+  .interview-mobile-landscape {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vh;
+    height: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100%);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* Optimize interview layout for mobile landscape */
+@media (max-width: 767px) and (orientation: landscape) {
+  .interview-mobile-optimized {
+    padding: 0.5rem !important;
+  }
+
+  .interview-mobile-optimized h2 {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .interview-mobile-optimized p {
+    font-size: 0.75rem !important;
+  }
+
+  .interview-mobile-optimized .grid {
+    gap: 0.5rem !important;
+  }
+
+  .interview-mobile-optimized button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "tech_stack": ["Next.js", "React", "TypeScript", "Tailwind CSS", "Supabase", "AI/LLM (Groq)"],
+  "features": [
+    {
+      "name": "Authentication & User Management",
+      "description": "Handles user login, guest login, institution login, and overall user authentication and management.",
+      "files": [
+        "app/auth/",
+        "app/actions/guest-login.ts",
+        "app/actions/institution-login.ts",
+        "lib/auth.ts",
+        "AUTHENTICATION_SETUP.md"
+      ]
+    },
+    {
+      "name": "Interview System",
+      "description": "Core interview functionality including audio/video interviews, DSA/code interviews, streaming, and related hooks for speech processing.",
+      "files": [
+        "app/interview/",
+        "components/audio-video-interviewer.tsx",
+        "components/dsa-code-interviewer.tsx",
+        "components/streaming-interview.tsx",
+        "hooks/use-streaming-interview.ts",
+        "hooks/use-voice-activity-detection.ts",
+        "hooks/use-speech-recognition.ts",
+        "hooks/use-text-to-speech.ts",
+        "app/api/interview/question/route.ts",
+        "app/api/interview/response/route.ts"
+      ]
+    },
+    {
+      "name": "Interview Results & Analysis",
+      "description": "Displays interview performance, AI feedback, detailed insights, and specific UI for DSA/Aptitude results.",
+      "files": [
+        "app/results/",
+        "components/results-overview.tsx",
+        "components/ai-feedback.tsx",
+        "components/detailed-insights.tsx",
+        "components/dsa-aptitude-results-ui.tsx",
+        "components/aptitude-quantitative-results-ui.tsx",
+        "app/actions/generate-analysis.ts",
+        "app/api/interview/analyze/route.ts"
+      ]
+    },
+    {
+      "name": "Dashboard & Admin Panels",
+      "description": "Provides user dashboard, admin functionalities, and super-admin controls.",
+      "files": [
+        "app/dashboard/",
+        "app/admin/",
+        "app/super-admin/",
+        "components/dashboard-navbar.tsx",
+        "components/super-admin-dashboard.tsx",
+        "lib/super-admin-auth.ts",
+        "lib/super-admin.ts",
+        "README_SUPER_ADMIN.md"
+      ]
+    },
+    {
+      "name": "Course & Batch Management",
+      "description": "Manages course content, user batches, and scheduling of interviews for institutions.",
+      "files": [
+        "app/courses/",
+        "app/my-batches/",
+        "app/institution-dashboard/",
+        "app/institution-interviews/",
+        "components/add-courses-modal.tsx",
+        "lib/courses.ts",
+        "lib/courseContentServer.ts"
+      ]
+    },
+    {
+      "name": "UI Components & Utilities",
+      "description": "Reusable UI components, hooks, and utility functions used throughout the application.",
+      "files": [
+        "components/ui/",
+        "components/navbar.tsx",
+        "components/footer.tsx",
+        "hooks/use-mobile.ts",
+        "lib/utils.ts"
+      ]
+    },
+    {
+      "name": "Credit Management",
+      "description": "Manages user credits for interviews and other services.",
+      "files": [
+        "utils/credits.ts",
+        "components/credits-display.tsx",
+        "app/actions/ensure-credits.ts"
+      ]
+    }
+  ]
+}

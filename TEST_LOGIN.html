@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Super Admin Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Super Admin Login Test</h1>
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email" value="admin@hiremind.app" required>
+        <input type="password" id="password" placeholder="Password" value="admin123" required>
+        <button type="submit">Login</button>
+    </form>
+    <div id="message"></div>
+    <div id="response" style="margin-top: 20px; font-size: 12px; color: #666;"></div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            const responseDiv = document.getElementById('response');
+            
+            messageDiv.innerHTML = 'Logging in...';
+            messageDiv.className = '';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/super-admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include' // Important for cookies
+                });
+                
+                const data = await response.json();
+                responseDiv.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = 'Login successful! Redirecting...';
+                    messageDiv.className = 'success';
+                    
+                    // Redirect to the super admin page
+                    setTimeout(() => {
+                        window.location.href = 'http://localhost:3000/hidden-admin-3fa9b2c7';
+                    }, 1000);
+                } else {
+                    messageDiv.innerHTML = 'Login failed: ' + (data.error || 'Unknown error');
+                    messageDiv.className = 'error';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = 'Error: ' + error.message;
+                messageDiv.className = 'error';
+                responseDiv.textContent = error.stack;
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "gaganbhuvan2027@gmail.com",
+  "loginPassword": "123456789",
+  "executionArgs": {
+    "projectName": "mockqqi4",
+    "projectPath": "C:\\Users\\gagan\\Downloads\\mockqqi4",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-B4ih2PlnTs292LOCRy6SOPsVyYStX4WY2MhNU27pUzOmFZ9pDbFtWVFbEqcWfW2_RiJKUKlPFyhRbTjRbkmtYImY1ILMdKG4ITv2C0wU_HKI8fiCoYREIZhZt9a0bWh_We0"
+    }
+  },
+  "proxy": "http://3e37b83c-9fda-4fa6-ad87-1af0ba898fef:Uu0uVWI1SPH15ghKpY2OjX8jE5bgtSFU@tun.testsprite.com:8080"
+}

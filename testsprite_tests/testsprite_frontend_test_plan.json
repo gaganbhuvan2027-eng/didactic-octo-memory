@@ -1,0 +1,451 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration and Authentication",
+    "description": "Verify that users can register and authenticate successfully across all user types including registered users, guests, and institutional users with proper security measures.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration page."
+      },
+      {
+        "type": "action",
+        "description": "Register as a new user with valid credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify registration is successful and user receives confirmation."
+      },
+      {
+        "type": "action",
+        "description": "Attempt login with valid registered user credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is successful and user is redirected to dashboard."
+      },
+      {
+        "type": "action",
+        "description": "Attempt guest login."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify guest user is authenticated with limited access appropriately."
+      },
+      {
+        "type": "action",
+        "description": "Attempt institution user login with valid credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify institution user login is successful and institution dashboard loads."
+      },
+      {
+        "type": "action",
+        "description": "Attempt login with invalid credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is denied with appropriate error messages."
+      },
+      {
+        "type": "action",
+        "description": "Test session management by refreshing page and verifying session persistence."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm user stays logged in until logout."
+      },
+      {
+        "type": "action",
+        "description": "Log out from all user types."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify session ends and user is redirected to login page."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Audio/Video Interview Functionality",
+    "description": "Verify the complete workflow of audio/video interviews including initiation, real-time streaming, voice activity detection, and completion.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a candidate user."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the interview scheduling or initiation page."
+      },
+      {
+        "type": "action",
+        "description": "Select audio/video interview type."
+      },
+      {
+        "type": "action",
+        "description": "Start the audio/video interview session."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify audio and video streams are properly connected and visible."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify voice activity detection is active and detects candidate speech."
+      },
+      {
+        "type": "action",
+        "description": "Perform sample audio/video interactions."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm real-time streaming has no significant latency or dropouts."
+      },
+      {
+        "type": "action",
+        "description": "End the interview session."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify interview session ends gracefully and summary screen is shown."
+      },
+      {
+        "type": "action",
+        "description": "Try to start an audio/video interview with insufficient user credits."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system blocks the interview start and shows insufficient credits message."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "DSA and Coding Interview Execution",
+    "description": "Verify users can perform coding and data structure algorithm interviews with real-time code editor, streaming interaction, and speech recognition integration.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as candidate."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to coding/DSA interview interface."
+      },
+      {
+        "type": "action",
+        "description": "Select a coding challenge question."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify coding editor loads with syntax highlighting and correct programming language."
+      },
+      {
+        "type": "action",
+        "description": "Start code interview session with real-time streaming enabled."
+      },
+      {
+        "type": "action",
+        "description": "Write and run code in the editor."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify code execution outputs and errors are correctly displayed."
+      },
+      {
+        "type": "action",
+        "description": "Use voice commands if supported to input or control the code editor."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify speech recognition captures commands accurately and modifies code accordingly."
+      },
+      {
+        "type": "action",
+        "description": "Submit the coding interview."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify submission is successful and user is notified."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit without writing code."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system shows a warning or prevents empty submission."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "AI-Generated Interview Feedback and Performance Analysis",
+    "description": "Validate that AI feedback and detailed interview analysis are generated accurately and displayed with correct UI components after interview submission.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete an interview (audio/video or coding)."
+      },
+      {
+        "type": "action",
+        "description": "Submit responses and wait for AI analysis."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI feedback is received and displayed within expected timeframe."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that detailed insights are rendered using correct UI components for the interview type."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that performance metrics align with submitted responses."
+      },
+      {
+        "type": "action",
+        "description": "Navigate through different result views including overview, DSA-specific, and aptitude results."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all data visualizations and feedback UI components behave correctly and responsively."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access interview results of another user without permission."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate access is denied with an appropriate error message."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Institution Course, Batch, and Interview Scheduling Management",
+    "description": "Verify institution users can manage courses, create batches, and schedule interviews accurately with no data inconsistencies.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as an institution user."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to course management section."
+      },
+      {
+        "type": "action",
+        "description": "Create, edit, and delete courses."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify course data updates correctly and is reflected immediately in UI."
+      },
+      {
+        "type": "action",
+        "description": "Create batches and assign users to batches."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm batch creation is successful and users are assigned properly."
+      },
+      {
+        "type": "action",
+        "description": "Schedule interviews for batches with different interview types."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify schedules are saved without conflicts or data loss."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to schedule overlapping interviews."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm system warns about schedule conflicts and prevents invalid scheduling."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "User Dashboard and Admin Panel Accessibility and Controls",
+    "description": "Ensure correct dashboard and control panels load for users, institution admins, and super-admins, with access restrictions enforced securely.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a standard candidate user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify candidate dashboard loads with relevant information and controls."
+      },
+      {
+        "type": "action",
+        "description": "Login as institutional admin user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify admin dashboard loads with institution management and user controls."
+      },
+      {
+        "type": "action",
+        "description": "Login as super-admin user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify super-admin dashboard loads with platform-wide controls and insights."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access admin or super-admin pages as unauthorized user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and user is redirected or shown error."
+      },
+      {
+        "type": "action",
+        "description": "Perform administrative actions such as user management, course modification, and interview oversight."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure changes execute correctly and reflect immediately without errors."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Credit Management and Enforcement",
+    "description": "Verify that user credits are correctly displayed, properly deducted upon interview initiation and maintenance, and that interview start is blocked when credits are insufficient.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as any user with available credits."
+      },
+      {
+        "type": "action",
+        "description": "Check credit balance display on dashboard or credit display component."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify displayed credits match backend data and update in real-time on usage."
+      },
+      {
+        "type": "action",
+        "description": "Initiate an interview requiring credit deduction."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify credits are deducted appropriately and immediately."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to initiate an interview with zero or insufficient credits."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system blocks the process and shows an insufficient credits warning."
+      },
+      {
+        "type": "action",
+        "description": "Add credits via administrative means or credit purchasing."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate credit balance updates correctly and usage is reflected post interview."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "UI Components Responsiveness and Cross-Browser Compatibility",
+    "description": "Verify that all reusable UI components such as navigation bars, footers, dashboards, and feedback components respond correctly on different devices and browsers.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the application on desktop browsers: Chrome, Firefox, Safari, Edge."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify layout integrity, component visibility, and interactive elements function as expected."
+      },
+      {
+        "type": "action",
+        "description": "Access the application on mobile devices with various screen sizes."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm UI adjusts appropriately with no overlaps, components scale properly, and usability is maintained."
+      },
+      {
+        "type": "action",
+        "description": "Test interactive components such as dropdowns, modals, and navigation bars for responsiveness."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure all UI components behave correctly on both touch and mouse pointer interactions."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Error Handling on Network Failures and API Errors",
+    "description": "Ensure the system gracefully handles network failures, API errors, and unexpected server responses with user-friendly error messages and recovery options.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate network failure during login."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is shown an appropriate connectivity error message."
+      },
+      {
+        "type": "action",
+        "description": "Simulate server error during interview submission."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm system prevents data loss, retries if applicable, or informs user to retry submission."
+      },
+      {
+        "type": "action",
+        "description": "Force API returning invalid data for interview results."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI handles data gracefully without crashing and shows fallback message."
+      },
+      {
+        "type": "action",
+        "description": "Simulate credit check API failure while starting interview."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm system blocks interview initiation with proper error notification."
+      }
+    ]
+  }
+]

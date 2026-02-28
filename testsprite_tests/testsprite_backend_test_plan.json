@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC001",
+    "title": "createorupdateasuperadminuser",
+    "description": "Test the API endpoint POST /api/super-admin/create-temp-super-admin to verify that it correctly creates or updates a super admin user when provided with valid email and password. Validate success response and error handling for server errors."
+  },
+  {
+    "id": "TC002",
+    "title": "fetchusercreditbalance",
+    "description": "Test the API endpoint GET /api/super-admin/users/{userId}/credits to ensure it returns the correct current credit balance for a valid userId. Verify proper error responses for invalid userId or when no credit record exists."
+  },
+  {
+    "id": "TC003",
+    "title": "addcreditstouseraccount",
+    "description": "Test the API endpoint POST /api/super-admin/users/{userId}/credits to verify that credits can be added to a user's account with a valid amount and optional reason. Confirm the new balance is updated correctly and server errors are handled gracefully."
+  }
+]

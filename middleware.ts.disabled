@@ -1,0 +1,26 @@
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+
+export function middleware(request: NextRequest) {
+  const enabled = process.env.ADMIN_HONEYPOT_ENABLED === "true"
+  const realPath = process.env.REAL_ADMIN_PATH || "/hidden-admin"
+  const pathname = request.nextUrl.pathname
+
+  if (!enabled) return NextResponse.next()
+
+  // If someone tries to visit the original /super-admin path, redirect them to the honeypot at /admin
+  if (pathname === "/super-admin" || pathname.startsWith("/super-admin/")) {
+    return NextResponse.redirect(new URL("/admin", request.url))
+  }
+
+  // allow pass-through for secret admin path (realPath)
+  if (pathname === realPath || pathname.startsWith(realPath + "/")) {
+    return NextResponse.next()
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ["/super-admin", "/super-admin/:path*"],
+}

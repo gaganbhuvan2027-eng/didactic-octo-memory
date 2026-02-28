@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "project": "Interview Management Platform",
+    "date": "2025-12-22",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "A comprehensive Interview Management Platform designed to facilitate and streamline the end-to-end recruitment interview process. It supports multiple types of interviews including audio/video and coding interviews, provides AI-driven feedback and performance analysis, and includes robust user authentication and management systems. The platform also offers institution-based course and batch management, credit handling, and administrative controls.",
+  "core_goals": [
+    "Enable seamless user authentication for candidates, guests, and institutional users.",
+    "Provide a reliable and interactive system for conducting various types of interviews including audio/video and coding challenges.",
+    "Offer detailed, AI-powered interview performance analysis and feedback to help candidates improve.",
+    "Support institutions with course, batch, and interview scheduling management.",
+    "Maintain an intuitive dashboard and admin panel for different user roles for better control and overview.",
+    "Ensure credit management for controlling usage of interview resources."
+  ],
+  "key_features": [
+    "Authentication & User Management: Multi-mode login, secure user authentication, and management for diverse user types including guests and institutions.",
+    "Interview System: Capability for audio/video interviews, data structure algorithm (DSA)/code interviews with real-time streaming and voice activity detection.",
+    "Interview Results & Analysis: AI-generated feedback, detailed insights visualized through custom UI components, specific handling for DSA and aptitude results.",
+    "Dashboard & Admin Panels: User dashboards, admin controls, and super-admin features for platform oversight and management.",
+    "Course & Batch Management: Tools for managing educational courses, user batches, and scheduling of institutional interviews.",
+    "UI Components & Utilities: Reusable React components, hooks and utility functions for consistent UI/UX throughout the platform.",
+    "Credit Management: System to manage and display user credits for using interview services."
+  ],
+  "user_flow_summary": [
+    "User authentication flow: Login as registered user, guest, or institution user; handle session management and logout.",
+    "Interview initiation flow: Select interview type, schedule or start interview, perform interview using audio/video or coding interface with streaming and speech recognition.",
+    "Interview submission flow: Submit responses and await AI-generated analysis and feedback.",
+    "Results review flow: Access and navigate detailed interview results, performance insights and feedback UI.",
+    "Admin workflow: Admin and super-admin login, access dashboards, manage users, courses, batches, and monitor interviews.",
+    "Credit usage flow: Manage user credits, ensure sufficient credit before interview initiation, update credit usage post-interview."
+  ],
+  "validation_criteria": [
+    "Successful user registration and authentication for all user types with expected security standards.",
+    "Stable, functional audio/video and coding interview execution with real-time streaming and speech processing.",
+    "Accurate and useful AI-generated interview feedback and detailed insights accessible through the user interface.",
+    "Fully operational dashboards and administrative controls with access restrictions enforced.",
+    "Effective management of courses, batches, and interview scheduling with no data inconsistency.",
+    "Proper recording and deduction of user credits aligned with interview usage.",
+    "Responsive UI components functioning correctly across devices and browsers."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "Next.js",
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Supabase",
+      "AI/LLM (Groq)"
+    ],
+    "features": [
+      {
+        "name": "Authentication & User Management",
+        "description": "Handles user login, guest login, institution login, and overall user authentication and management.",
+        "files": [
+          "app/auth/",
+          "app/actions/guest-login.ts",
+          "app/actions/institution-login.ts",
+          "lib/auth.ts",
+          "AUTHENTICATION_SETUP.md"
+        ]
+      },
+      {
+        "name": "Interview System",
+        "description": "Core interview functionality including audio/video interviews, DSA/code interviews, streaming, and related hooks for speech processing.",
+        "files": [
+          "app/interview/",
+          "components/audio-video-interviewer.tsx",
+          "components/dsa-code-interviewer.tsx",
+          "components/streaming-interview.tsx",
+          "hooks/use-streaming-interview.ts",
+          "hooks/use-voice-activity-detection.ts",
+          "hooks/use-speech-recognition.ts",
+          "hooks/use-text-to-speech.ts",
+          "app/api/interview/question/route.ts",
+          "app/api/interview/response/route.ts"
+        ]
+      },
+      {
+        "name": "Interview Results & Analysis",
+        "description": "Displays interview performance, AI feedback, detailed insights, and specific UI for DSA/Aptitude results.",
+        "files": [
+          "app/results/",
+          "components/results-overview.tsx",
+          "components/ai-feedback.tsx",
+          "components/detailed-insights.tsx",
+          "components/dsa-aptitude-results-ui.tsx",
+          "components/aptitude-quantitative-results-ui.tsx",
+          "app/actions/generate-analysis.ts",
+          "app/api/interview/analyze/route.ts"
+        ]
+      },
+      {
+        "name": "Dashboard & Admin Panels",
+        "description": "Provides user dashboard, admin functionalities, and super-admin controls.",
+        "files": [
+          "app/dashboard/",
+          "app/admin/",
+          "app/super-admin/",
+          "components/dashboard-navbar.tsx",
+          "components/super-admin-dashboard.tsx",
+          "lib/super-admin-auth.ts",
+          "lib/super-admin.ts",
+          "README_SUPER_ADMIN.md"
+        ]
+      },
+      {
+        "name": "Course & Batch Management",
+        "description": "Manages course content, user batches, and scheduling of interviews for institutions.",
+        "files": [
+          "app/courses/",
+          "app/my-batches/",
+          "app/institution-dashboard/",
+          "app/institution-interviews/",
+          "components/add-courses-modal.tsx",
+          "lib/courses.ts",
+          "lib/courseContentServer.ts"
+        ]
+      },
+      {
+        "name": "UI Components & Utilities",
+        "description": "Reusable UI components, hooks, and utility functions used throughout the application.",
+        "files": [
+          "components/ui/",
+          "components/navbar.tsx",
+          "components/footer.tsx",
+          "hooks/use-mobile.ts",
+          "lib/utils.ts"
+        ]
+      },
+      {
+        "name": "Credit Management",
+        "description": "Manages user credits for interviews and other services.",
+        "files": [
+          "utils/credits.ts",
+          "components/credits-display.tsx",
+          "app/actions/ensure-credits.ts"
+        ]
+      }
+    ]
+  }
+}
