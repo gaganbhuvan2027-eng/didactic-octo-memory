@@ -3,6 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 let client: SupabaseClient | null = null
 
+/**
+ * Bypasses Chrome Web Locks API to prevent deadlocks on Chrome Mobile.
+ * The default navigator.locks can hang indefinitely on Chromium browsers.
+ */
+const noOpLock = async (_name: unknown, _acquireTimeout: unknown, fn: () => Promise<unknown>) => {
+  return await fn()
+}
+
 export function createClient() {
   if (client) {
     return client
@@ -28,8 +36,9 @@ export function createClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      // Implicit flow: tokens in URL fragment, no code_verifier needed (avoids "both auth code and code verifier should be non-empty" error)
-      flowType: "implicit",
+      // PKCE flow: uses ?code= query params instead of # fragments (Chrome Mobile strips fragments)
+      flowType: "pkce",
+      lock: noOpLock,
     },
   })
 

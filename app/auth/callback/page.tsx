@@ -22,33 +22,61 @@ function CallbackContent() {
 
       try {
         const supabase = createClient()
-        // Implicit flow: detectSessionInUrl extracts tokens from URL fragment (#access_token=...) automatically.
-        // No code_verifier needed - avoids "both auth code and code verifier should be non-empty" error.
-        let { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          await new Promise((r) => setTimeout(r, 600))
-          ;({ data: { session } } = await supabase.auth.getSession())
-        }
-        if (!session) {
-          router.replace("/auth")
-          return
-        }
+        const code = searchParams.get("code")
 
-        // Setup profile/credits
-        const setupRes = await fetch("/api/auth/setup-profile", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          credentials: "include",
-        })
+        if (code) {
+          // PKCE flow: exchange authorization code for session (server-side friendly, works on Chrome Mobile)
+          const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) {
+            throw exchangeError
+          }
+          if (!session) {
+            router.replace("/auth")
+            return
+          }
 
-        if (!setupRes.ok) {
-          console.warn("[auth/callback] Profile setup failed, user still logged in")
+          // Setup profile/credits
+          const setupRes = await fetch("/api/auth/setup-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            credentials: "include",
+          })
+
+          if (!setupRes.ok) {
+            console.warn("[auth/callback] Profile setup failed, user still logged in")
+          }
+
+          window.location.href = "/dashboard"
+        } else {
+          // Fallback: no code in URL (e.g. implicit flow or direct visit)
+          let { data: { session } } = await supabase.auth.getSession()
+          if (!session) {
+            await new Promise((r) => setTimeout(r, 600))
+            ;({ data: { session } } = await supabase.auth.getSession())
+          }
+          if (!session) {
+            router.replace("/auth")
+            return
+          }
+
+          const setupRes = await fetch("/api/auth/setup-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            credentials: "include",
+          })
+
+          if (!setupRes.ok) {
+            console.warn("[auth/callback] Profile setup failed, user still logged in")
+          }
+
+          window.location.href = "/dashboard"
         }
-
-        window.location.href = "/dashboard"
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Sign in failed"
         setError(msg)

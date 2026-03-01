@@ -299,6 +299,7 @@ export default function AuthPage() {
         provider: "google",
         options: {
           redirectTo: redirectUrl,
+          queryParams: { prompt: "select_account" },
         },
       })
 
