@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import * as Sentry from "@sentry/nextjs"
 import { createClient } from "@/lib/supabase/client"
 
 export default function AuthPage() {
@@ -270,6 +271,7 @@ export default function AuthPage() {
         }
       }
     } catch (err: any) {
+      Sentry.captureException(err)
       console.error("[v0] Auth error occurred:", err)
       if (err.message?.includes("NetworkError") || err.message?.includes("fetch")) {
         setError("Unable to connect to authentication service. Please check your internet connection and try again.")
@@ -290,21 +292,27 @@ export default function AuthPage() {
     setGoogleLoading(true)
 
     try {
-      const supabase = createClient()
+      await Sentry.startSpan(
+        { op: "ui.click", name: "Google Sign In" },
+        async () => {
+          const supabase = createClient()
 
-      const redirectUrl =
-        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
+          const redirectUrl =
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: { prompt: "select_account" },
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: redirectUrl,
+              queryParams: { prompt: "select_account" },
+            },
+          })
+
+          if (error) throw error
         },
-      })
-
-      if (error) throw error
+      )
     } catch (err: any) {
+      Sentry.captureException(err)
       setError(err.message || "Failed to sign in with Google. Please try again.")
       setGoogleLoading(false)
     }
@@ -373,6 +381,7 @@ export default function AuthPage() {
         setResendMessage(msg || result.message)
       }
     } catch (err: any) {
+      Sentry.captureException(err)
       console.error("[v0] Unexpected resend error:", err)
       setResendMessage("Failed to resend confirmation email. Please try again later.")
     } finally {

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -78,6 +79,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true })
   } catch (err) {
+    Sentry.captureException(err)
     console.error("[auth/setup-profile] Error:", err)
     return NextResponse.json({ error: "Profile setup failed" }, { status: 500 })
   }

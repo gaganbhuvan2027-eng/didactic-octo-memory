@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Sora } from 'next/font/google'
+import { SentryInit } from "@/components/sentry-init"
 import "./globals.css"
 
 const _sora = Sora({ subsets: ["latin"], variable: "--font-sora" })
@@ -20,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${_sora.variable} ${_inter.variable} font-sans antialiased`}>
-        {children}
+        <SentryInit>{children}</SentryInit>
       </body>
     </html>
   )

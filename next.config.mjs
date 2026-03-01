@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 const securityHeaders = [
   {
     key: 'X-DNS-Prefetch-Control',
@@ -89,4 +91,10 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+const sentryWebpackPluginOptions = {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+}
+
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions)

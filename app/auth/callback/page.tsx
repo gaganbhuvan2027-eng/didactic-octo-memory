@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import * as Sentry from "@sentry/nextjs"
 import { createClient } from "@/lib/supabase/client"
 
 function CallbackContent() {
@@ -78,6 +79,7 @@ function CallbackContent() {
           window.location.href = "/dashboard"
         }
       } catch (err) {
+        Sentry.captureException(err)
         const msg = err instanceof Error ? err.message : "Sign in failed"
         setError(msg)
         router.replace(`/auth?error=${encodeURIComponent(msg)}`)
