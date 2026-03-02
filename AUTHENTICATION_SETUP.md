@@ -79,3 +79,13 @@ Required variables (already configured):
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+### Custom Google OAuth (India / ISP block workaround)
+
+For Google sign-in that avoids `supabase.co` in the browser (fixes blocks in India):
+
+- `GOOGLE_CLIENT_ID` – from Google Cloud Console
+- `GOOGLE_CLIENT_SECRET` – from Google Cloud Console
+- `GOOGLE_REDIRECT_URI` – e.g. `https://your-domain.com/api/auth/google/callback`
+
+See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for setup.

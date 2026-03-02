@@ -295,20 +295,9 @@ export default function AuthPage() {
       await Sentry.startSpan(
         { op: "ui.click", name: "Google Sign In" },
         async () => {
-          const supabase = createClient()
-
-          const redirectUrl =
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
-
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: redirectUrl,
-              queryParams: { prompt: "select_account" },
-            },
-          })
-
-          if (error) throw error
+          // Custom OAuth flow: redirect to our API (never hits supabase.co from browser)
+          // Fixes ISP blocks in India - all Supabase calls happen server-side from Vercel
+          window.location.href = "/api/auth/google"
         },
       )
     } catch (err: any) {
