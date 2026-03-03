@@ -119,7 +119,7 @@ export default function AuthPage() {
       } else {
         console.log("[v0] Attempting to sign up with email:", email)
         const redirectUrl =
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/confirm`
 
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -320,7 +320,7 @@ export default function AuthPage() {
         return
       }
 
-      const redirectUrl = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`
+      const redirectUrl = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/confirm`
 
       console.log("[v0] Attempting to resend confirmation email to:", email)
 

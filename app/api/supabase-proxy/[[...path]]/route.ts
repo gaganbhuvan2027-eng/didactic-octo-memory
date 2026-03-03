@@ -52,6 +52,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path?
     "x-client-info",
     "prefer",
     "range",
+    "cookie", // Essential for auth sessions - browser sends session cookies
   ]
   for (const name of forwardHeaders) {
     const val = request.headers.get(name)
@@ -76,16 +77,32 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path?
     })
 
     const resHeaders = new Headers()
+    const setCookieHeaders: string[] = []
     res.headers.forEach((v, k) => {
+      const lower = k.toLowerCase()
       if (
-        !k.startsWith("content-encoding") &&
-        !k.startsWith("transfer-encoding") &&
-        k.toLowerCase() !== "connection"
+        !lower.startsWith("content-encoding") &&
+        !lower.startsWith("transfer-encoding") &&
+        lower !== "connection"
       ) {
-        resHeaders.set(k, v)
+        if (lower === "set-cookie") {
+          setCookieHeaders.push(v)
+        } else {
+          resHeaders.set(k, v)
+        }
       }
     })
+    // Forward Set-Cookie but strip Domain= so cookies are set for our domain (proxy)
+    for (const setCookie of setCookieHeaders) {
+      const rewritten = setCookie
+        .split(";")
+        .map((part) => part.trim())
+        .filter((part) => !part.toLowerCase().startsWith("domain="))
+        .join("; ")
+      resHeaders.append("Set-Cookie", rewritten)
+    }
     resHeaders.set("Access-Control-Allow-Origin", request.headers.get("origin") || "*")
+    resHeaders.set("Access-Control-Allow-Credentials", "true")
 
     return new NextResponse(res.body, {
       status: res.status,

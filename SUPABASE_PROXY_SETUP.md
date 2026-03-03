@@ -5,39 +5,59 @@ When custom domain + Cloudflare still gets blocked, proxy **all** Supabase traff
 ## How It Works
 
 ```
-User (India) → your-app.vercel.app → Vercel server → Supabase
+User (India) → mockzen.com (or your domain) → Vercel server → Supabase
 ```
 
-- REST API (database, storage, auth session refresh) → proxied ✓
-- Google OAuth → use custom flow (already set up) ✓
-- Realtime (WebSockets) → not supported by this proxy; disable if you use it
+- REST API (database, storage, auth) → proxied ✓
+- **Cookie forwarding** → Cookie and Set-Cookie headers forwarded for auth sessions ✓
+- Google OAuth → use custom flow (see GOOGLE_OAUTH_SETUP.md) ✓
+- Email confirmation → server-side `/auth/confirm` route ✓
+- Realtime (WebSockets) → not supported; disable if you use it
 
 ## Setup
 
 ### 1. Environment Variables
 
-**Keep these as-is** (real Supabase URL for the proxy route):
+**Keep these** (real Supabase URL for the proxy route):
 
 ```env
 SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-**Change this** in Vercel (and `.env.local` for local dev when testing proxy):
+**Set this** to your proxy URL:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://didactic-octo-memory-mjg9.vercel.app/api/supabase-proxy
+NEXT_PUBLIC_SUPABASE_URL=https://mockzen.com/api/supabase-proxy
 ```
 
-Use your actual app URL (Vercel or custom domain).
+Use your actual app URL (e.g. `https://mockzen.com` or `https://didactic-octo-memory-mjg9.vercel.app`).
 
-### 2. Deploy
+### 2. Supabase Auth Redirect URLs
 
-Redeploy after updating env vars. All Supabase requests will go through your app.
+In Supabase Dashboard → Auth → URL Configuration:
 
-### 3. Local Dev
+- **Site URL:** `https://mockzen.com`
+- **Redirect URLs:** Add `https://mockzen.com/auth/confirm` and `https://mockzen.com/auth/callback`
 
-For local testing with proxy:
+### 3. Email Confirmation Template (Required for India)
+
+Supabase's default confirmation link goes to `supabase.co` (blocked). Use a custom template:
+
+1. Supabase Dashboard → Auth → Email Templates → **Confirm signup**
+2. Replace the confirmation link with:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm your email</a>
+```
+
+This sends users directly to your site instead of Supabase.
+
+### 4. Deploy
+
+Redeploy after updating env vars. Email login and signup will work through the proxy.
+
+### 5. Local Dev
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:3000/api/supabase-proxy
@@ -45,8 +65,6 @@ SUPABASE_URL=https://your-project.supabase.co
 ```
 
 ## Reverting
-
-To use Supabase directly again:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -56,7 +74,5 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 
 For full India compatibility:
 
-1. **Google login** → Custom OAuth (see GOOGLE_OAUTH_SETUP.md)
-2. **Database, storage, auth refresh** → This proxy
-
-Both work together.
+1. **Google login** → Custom OAuth (GOOGLE_OAUTH_SETUP.md)
+2. **Email login + confirmation** → This proxy + `/auth/confirm`
