@@ -50,7 +50,7 @@ export default function AuthPage() {
           console.log("Initial session check skipped");
           sessionStatus = "error";
         }
-        console.error("[v0] AuthPage - useEffect: Client ready, session status:", sessionStatus);
+        console.log("[v0] AuthPage - useEffect: Client ready, session status:", sessionStatus);
         setClientReady(true);
       } catch (e) {
         console.error("[v0] AuthPage - useEffect: Error during client initialization:", e);
@@ -89,7 +89,7 @@ export default function AuthPage() {
       }
 
       if (isLogin) {
-        console.error("[v0] Attempting to sign in with email:", email, "(Login flow)");
+        console.log("[v0] Attempting to sign in with email:", email, "(Login flow)");
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,

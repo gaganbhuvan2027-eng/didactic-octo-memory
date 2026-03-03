@@ -16,7 +16,11 @@ export function createClient() {
     return client
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  // When using proxy, always use current origin for same-origin requests (avoids CORS)
+  if (typeof window !== "undefined" && url?.includes("/api/supabase-proxy")) {
+    url = `${window.location.origin}/api/supabase-proxy`
+  }
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {

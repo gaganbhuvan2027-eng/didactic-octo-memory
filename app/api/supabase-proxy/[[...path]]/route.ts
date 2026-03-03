@@ -9,32 +9,48 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
  * Use when ISP blocks supabase.co (e.g. India).
  * Set NEXT_PUBLIC_SUPABASE_URL to https://your-app.vercel.app/api/supabase-proxy
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function GET(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function POST(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function PATCH(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function PUT(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function DELETE(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-export async function OPTIONS(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params)
+export async function OPTIONS(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  return proxy(request, context)
 }
 
-async function proxy(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  const { path = [] } = await params
+async function proxy(request: NextRequest, context: { params?: Promise<{ path?: string[] }> }) {
+  const resolvedParams = await (context?.params ?? Promise.resolve({}))
+  const path = resolvedParams?.path ?? []
+
+  // CORS preflight - respond immediately without forwarding to Supabase
+  if (request.method === "OPTIONS") {
+    const origin = request.headers.get("origin") || request.nextUrl.origin
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, prefer, range, cookie",
+        "Access-Control-Max-Age": "86400",
+      },
+    })
+  }
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return NextResponse.json({ error: "Supabase proxy not configured" }, { status: 500 })
@@ -101,7 +117,9 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path?
         .join("; ")
       resHeaders.append("Set-Cookie", rewritten)
     }
-    resHeaders.set("Access-Control-Allow-Origin", request.headers.get("origin") || "*")
+    // Must use actual origin (not *) when using credentials - required for auth
+    const origin = request.headers.get("origin") || request.nextUrl.origin
+    resHeaders.set("Access-Control-Allow-Origin", origin)
     resHeaders.set("Access-Control-Allow-Credentials", "true")
 
     return new NextResponse(res.body, {
