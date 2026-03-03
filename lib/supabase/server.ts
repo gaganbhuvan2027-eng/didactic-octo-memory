@@ -17,8 +17,10 @@ export async function createClient() {
     accessToken = authHeader.split(' ')[1]
   }
 
+  // Use direct Supabase URL on server (bypass proxy) - faster, proxy only needed for browser in India
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       accessToken,
@@ -50,8 +52,10 @@ export async function createClient() {
  * Uses the standard supabase-js client (not SSR) to ensure service role privileges.
  */
 export async function createAdminClient() {
+  // Use direct Supabase URL on server (bypass proxy) - faster for interview/API routes
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       auth: {
