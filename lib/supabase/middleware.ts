@@ -6,11 +6,11 @@ export function createClient(request: NextRequest) {
     request,
   })
 
-  // Use request origin when proxy is enabled - must match browser's cookie name (sb-{hostname}-auth-token)
+  // When proxy is enabled, use direct Supabase URL so we read sb-{projectRef}-auth-token (cookie Supabase sets).
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-  const supabaseUrl = baseUrl.includes("/api/supabase-proxy")
-    ? `${request.nextUrl.origin}/api/supabase-proxy`
-    : baseUrl
+  const directUrl = process.env.SUPABASE_URL || ""
+  const supabaseUrl =
+    baseUrl.includes("/api/supabase-proxy") && directUrl ? directUrl : baseUrl
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -46,11 +46,11 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  // Use request origin when proxy is enabled - must match browser's cookie name (sb-{hostname}-auth-token)
+  // When proxy is enabled, use direct Supabase URL so we read sb-{projectRef}-auth-token (cookie Supabase sets).
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-  const supabaseUrl = baseUrl.includes("/api/supabase-proxy")
-    ? `${request.nextUrl.origin}/api/supabase-proxy`
-    : baseUrl
+  const directUrl = process.env.SUPABASE_URL || ""
+  const supabaseUrl =
+    baseUrl.includes("/api/supabase-proxy") && directUrl ? directUrl : baseUrl
 
   const supabase = createServerClient(
     supabaseUrl,

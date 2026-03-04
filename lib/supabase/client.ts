@@ -11,16 +11,24 @@ const noOpLock = async (_name: unknown, _acquireTimeout: unknown, fn: () => Prom
   return await fn()
 }
 
+/** Extract project ref from anon key JWT payload (ref field). Supabase sets cookies as sb-{ref}-auth-token. */
+function getProjectRefFromAnonKey(anonKey: string): string | null {
+  try {
+    const parts = anonKey.split(".")
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as { ref?: string }
+    return payload.ref ?? null
+  } catch {
+    return null
+  }
+}
+
 export function createClient() {
   if (client) {
     return client
   }
 
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  // When using proxy, always use current origin for same-origin requests (avoids CORS)
-  if (typeof window !== "undefined" && url?.includes("/api/supabase-proxy")) {
-    url = `${window.location.origin}/api/supabase-proxy`
-  }
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
@@ -33,9 +41,21 @@ export function createClient() {
     )
   }
 
+  // When using proxy, use current origin for same-origin requests (avoids CORS)
+  // AND use Supabase's cookie name (sb-{projectRef}-auth-token) so we read the cookie Supabase sets
+  const useProxy = typeof window !== "undefined" && url.includes("/api/supabase-proxy")
+  if (useProxy) {
+    url = `${window.location.origin}/api/supabase-proxy`
+  }
+
+  const projectRef = getProjectRefFromAnonKey(key)
+  const cookieOptions =
+    useProxy && projectRef ? { name: `sb-${projectRef}-auth-token` } : undefined
+
   console.log("[v0] Initializing Supabase client with URL:", url.substring(0, 20) + "...")
 
   client = createBrowserClient(url, key, {
+    cookieOptions,
     auth: {
       persistSession: true,
       autoRefreshToken: true,
