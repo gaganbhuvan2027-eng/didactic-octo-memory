@@ -6,8 +6,14 @@ export function createClient(request: NextRequest) {
     request,
   })
 
+  // Use request origin when proxy is enabled - must match browser's cookie name (sb-{hostname}-auth-token)
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  const supabaseUrl = baseUrl.includes("/api/supabase-proxy")
+    ? `${request.nextUrl.origin}/api/supabase-proxy`
+    : baseUrl
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -40,8 +46,14 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  // Use request origin when proxy is enabled - must match browser's cookie name (sb-{hostname}-auth-token)
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  const supabaseUrl = baseUrl.includes("/api/supabase-proxy")
+    ? `${request.nextUrl.origin}/api/supabase-proxy`
+    : baseUrl
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {

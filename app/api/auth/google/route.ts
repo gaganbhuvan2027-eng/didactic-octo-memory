@@ -9,10 +9,10 @@ const STATE_COOKIE = "google_oauth_state"
  */
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI
+  const redirectUri = `${request.nextUrl.origin}/api/auth/google/callback`
 
-  if (!clientId || !redirectUri) {
-    console.error("[auth/google] Missing GOOGLE_CLIENT_ID or GOOGLE_REDIRECT_URI")
+  if (!clientId) {
+    console.error("[auth/google] Missing GOOGLE_CLIENT_ID")
     return NextResponse.redirect(new URL("/auth?error=Google+auth+not+configured", request.url))
   }
 

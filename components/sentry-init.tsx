@@ -19,8 +19,9 @@ export function SentryInit({ children }: { children: React.ReactNode }) {
     Sentry.init({
       dsn,
       environment: process.env.NODE_ENV,
+      enabled: process.env.NODE_ENV === "production",
       tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
-      debug: process.env.NODE_ENV === "development",
+      debug: false,
     })
   }, [])
 

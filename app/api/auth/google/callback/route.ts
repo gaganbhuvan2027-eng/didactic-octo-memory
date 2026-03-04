@@ -32,11 +32,11 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const redirectUri = `${request.nextUrl.origin}/api/auth/google/callback`
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!clientId || !clientSecret || !redirectUri || !supabaseUrl || !supabaseAnonKey) {
+  if (!clientId || !clientSecret || !supabaseUrl || !supabaseAnonKey) {
     console.error("[auth/google/callback] Missing env vars")
     return NextResponse.redirect(new URL("/auth?error=Auth+not+configured", request.url))
   }
