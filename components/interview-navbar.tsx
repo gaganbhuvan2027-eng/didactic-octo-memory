@@ -12,6 +12,7 @@ interface InterviewNavbarProps {
   isInterviewStarted?: boolean
   creditsUsed?: number
   interviewId?: string | null
+  interviewTitle?: string
   onExitConfirm?: () => void
 }
 
@@ -19,6 +20,7 @@ export default function InterviewNavbar({
   isInterviewStarted = false,
   creditsUsed = 0,
   interviewId = null,
+  interviewTitle,
   onExitConfirm,
 }: InterviewNavbarProps) {
   const router = useRouter()
@@ -103,21 +105,26 @@ export default function InterviewNavbar({
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={handleBackClick}
-              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors shrink-0"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <Link href={getDashboardUrl()} className="text-2xl font-bold text-gray-900">
+            <Link href={getDashboardUrl()} className="text-xl sm:text-2xl font-bold text-gray-900 shrink-0">
               MockZen
             </Link>
+            {interviewTitle && (
+              <span className="text-sm sm:text-base font-semibold text-gray-700 truncate" title={interviewTitle}>
+                {interviewTitle}
+              </span>
+            )}
             {isInterviewStarted && (
-              <span className="ml-2 px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+              <span className="ml-2 px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full shrink-0">
                 Interview in Progress
               </span>
             )}

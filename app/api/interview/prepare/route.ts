@@ -75,10 +75,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not enough credits" }, { status: 402 })
     }
 
+    // Concurrency: only one active interview per user
+    const { data: activeInterview } = await adminSupabase
+      .from("interviews")
+      .select("id")
+      .eq("user_id", effectiveUserId)
+      .eq("status", "active")
+      .maybeSingle()
+    if (activeInterview) {
+      return NextResponse.json(
+        { error: "An interview is already running on another device." },
+        { status: 409 }
+      )
+    }
+
     const insertPayload: Record<string, unknown> = {
       user_id: effectiveUserId,
       interview_type: interviewType,
-      status: "in_progress",
+      status: "active",
       started_at: new Date().toISOString(),
       difficulty: difficulty || "intermediate",
       question_count: questionCount,
@@ -116,12 +130,11 @@ export async function POST(request: Request) {
 
     const interviewId = interviewResult.data.id
 
-    const questionBody: Record<string, unknown> = {
+    const baseQuestionBody: Record<string, unknown> = {
       interviewId,
       interviewType,
-      questionNumber: 1,
-      previousAnswers: [],
       userId: effectiveUserId,
+      ...(body.interviewTypeFromPath && { interviewTypeFromPath: body.interviewTypeFromPath }),
       ...(customScenario && { customScenario }),
       ...(topics?.length > 0 && { topics }),
       ...(interviewer && { interviewer }),
@@ -135,34 +148,66 @@ export async function POST(request: Request) {
 
     const origin = new URL(request.url).origin
     const cookieHeader = request.headers.get("cookie") || ""
-    const questionRes = await fetch(`${origin}/api/interview/question`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(cookieHeader && { cookie: cookieHeader }),
-      },
-      body: JSON.stringify(questionBody),
-    })
 
-    let firstQuestion: string | { question: string; options: Array<{ key: string; text: string }>; correctAnswer?: string } | null = null
-    if (questionRes.ok) {
-      const qData = await questionRes.json()
-      if (qData?.question) {
-        if (Array.isArray(qData.options) && qData.options.length >= 2) {
-          firstQuestion = {
-            question: qData.question,
-            options: qData.options,
-            correctAnswer: qData.correctAnswer,
-          }
-        } else {
-          firstQuestion = qData.question
-        }
+    // Pre-generate Q1, Q2, Q3 (intro + type/topic - no previous answers needed)
+    const questionPromises = [1, 2, 3].map((questionNumber) =>
+      fetch(`${origin}/api/interview/question`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookieHeader && { cookie: cookieHeader }),
+        },
+        body: JSON.stringify({
+          ...baseQuestionBody,
+          questionNumber,
+          previousAnswers: [],
+        }),
+      }).then((r) => (r.ok ? r.json() : null))
+    )
+
+    const questionResults = await Promise.all(questionPromises)
+
+    type QuestionItem = string | { question: string; options: Array<{ key: string; text: string }>; correctAnswer?: string }
+    const questions: QuestionItem[] = []
+    const questionTexts: string[] = []
+
+    for (const qData of questionResults) {
+      if (!qData?.question) continue
+      if (Array.isArray(qData.options) && qData.options.length >= 2) {
+        questions.push({
+          question: qData.question,
+          options: qData.options,
+          correctAnswer: qData.correctAnswer,
+        })
+        questionTexts.push(qData.question)
+      } else {
+        questions.push(qData.question)
+        questionTexts.push(typeof qData.question === "string" ? qData.question : "")
       }
     }
 
+    // Pre-generate TTS for each question (optional - don't block on failures)
+    const voiceId = body.voiceId || "alex"
+    const audioPromises = questionTexts
+      .filter((t) => t.length > 0)
+      .map((text) =>
+        fetch(`${origin}/api/tts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voiceId }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => d?.audioContent as string | undefined)
+          .catch(() => undefined)
+      )
+
+    const audioResults = await Promise.all(audioPromises)
+
     return NextResponse.json({
       interview: { ...interviewResult.data, question_count: questionCount },
-      firstQuestion,
+      firstQuestion: questions[0] ?? null,
+      questions,
+      audio: audioResults.filter((a): a is string => !!a),
     })
   } catch (error) {
     console.error("[interview/prepare] Error:", error instanceof Error ? error.message : error)

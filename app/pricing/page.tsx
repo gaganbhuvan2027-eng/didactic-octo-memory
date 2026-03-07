@@ -1,13 +1,37 @@
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
 import DashboardNavbar from "@/components/dashboard-navbar"
+import { CountrySelector } from "@/components/country-selector"
+import { RazorpayCheckout } from "@/components/razorpay-checkout"
+import type { PlanId } from "@/lib/payment-plans"
 
 export default function PricingPage() {
-  const plans = [
+  const [country, setCountry] = useState("india")
+
+  const isIndia = country === "india"
+
+  const plans: Array<{
+    planId?: PlanId
+    name: string
+    price: string
+    period: string
+    amount: number
+    currency: "INR" | "USD"
+    description: string
+    features: string[]
+    cta: string
+    highlighted: boolean
+    href?: string
+  }> = [
     {
+      planId: "one_week",
       name: "One Week",
-      price: "₹199",
-      period: "",
+      price: isIndia ? "₹199" : "$7",
+      period: isIndia ? "" : "/week",
+      amount: isIndia ? 19900 : 700,
+      currency: isIndia ? "INR" : "USD",
       description: "Unlimited interviews for 7 days",
       features: [
         "Unlimited interviews",
@@ -19,9 +43,12 @@ export default function PricingPage() {
       highlighted: false,
     },
     {
+      planId: "one_month",
       name: "One Month",
-      price: "₹299",
-      period: "",
+      price: isIndia ? "₹299" : "$13",
+      period: isIndia ? "" : "/month",
+      amount: isIndia ? 29900 : 1300,
+      currency: isIndia ? "INR" : "USD",
       description: "Unlimited interviews for 30 days",
       features: [
         "Unlimited interviews",
@@ -33,9 +60,12 @@ export default function PricingPage() {
       highlighted: true,
     },
     {
+      planId: "credits_pack",
       name: "Credits Pack",
-      price: "₹299",
+      price: isIndia ? "₹299" : "$13",
       period: "",
+      amount: isIndia ? 29900 : 1300,
+      currency: isIndia ? "INR" : "USD",
       description: "60 credits, never expire",
       features: [
         "60 credits",
@@ -50,6 +80,8 @@ export default function PricingPage() {
       name: "Enterprise",
       price: "Custom",
       period: "",
+      amount: 0,
+      currency: "INR",
       description: "For teams and organizations",
       features: [
         "Bulk licensing",
@@ -59,6 +91,7 @@ export default function PricingPage() {
       ],
       cta: "Contact Sales",
       highlighted: false,
+      href: "/contact",
     },
   ]
 
@@ -70,7 +103,10 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Simple, Transparent Pricing</h1>
-          <p className="text-xl text-gray-600">Choose the perfect plan for your interview preparation</p>
+          <p className="text-xl text-gray-600 mb-6">Choose the perfect plan for your interview preparation</p>
+          <div className="flex flex-col items-center">
+            <CountrySelector value={country} onChange={setCountry} className="mx-auto" />
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -99,15 +135,34 @@ export default function PricingPage() {
                 {plan.period && <span className="text-gray-600 ml-2">{plan.period}</span>}
               </div>
 
-              <button
-                className={`w-full py-3 rounded-lg font-semibold mb-8 transition-all ${
-                  plan.highlighted
-                    ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:shadow-lg hover:shadow-blue-400/30"
-                    : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
-                }`}
-              >
-                {plan.cta}
-              </button>
+              {plan.href ? (
+                <Link href={plan.href}>
+                  <button
+                    className={`w-full py-3 rounded-lg font-semibold mb-8 transition-all ${
+                      plan.highlighted
+                        ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:shadow-lg hover:shadow-blue-400/30"
+                        : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    }`}
+                  >
+                    {plan.cta}
+                  </button>
+                </Link>
+              ) : plan.planId ? (
+                <RazorpayCheckout
+                  planId={plan.planId}
+                  planName={plan.name}
+                  amount={plan.amount}
+                  currency={plan.currency}
+                  isIndia={isIndia}
+                  className={`w-full py-3 rounded-lg font-semibold mb-8 transition-all ${
+                    plan.highlighted
+                      ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:shadow-lg hover:shadow-blue-400/30"
+                      : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                  }`}
+                >
+                  {plan.cta}
+                </RazorpayCheckout>
+              ) : null}
 
               <div className="space-y-4">
                 {plan.features.map((feature, i) => (

@@ -99,25 +99,18 @@ function InterviewRoomContent({ interviewType, courseTitle, customScenario }: In
   }
 
   return (
-    <div className="min-h-screen bg-white interview-mobile-landscape">
+    <div className="h-screen overflow-hidden bg-white interview-mobile-landscape flex flex-col">
       <InterviewNavbar
         isInterviewStarted={state.isStarted}
         creditsUsed={state.creditsUsed}
         interviewId={state.interviewId}
+        interviewTitle={getInterviewTitle()}
         onExitConfirm={handleExitConfirm}
       />
 
-      <div className="pt-16 md:pt-20 pb-4 md:pb-8 px-3 md:px-4 sm:px-6 lg:px-8 h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col interview-mobile-optimized">
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="mb-3 md:mb-4 flex-shrink-0">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">{getInterviewTitle()}</h2>
-            {!isCodingInterview && (
-              <p className="text-gray-600 text-xs md:text-sm mt-1">Your AI interviewer will appear here</p>
-            )}
-          </div>
-          <div className="flex-1 flex flex-col min-h-0">
-            <InterviewWrapper interviewType={interviewType} courseTitle={courseTitle} customScenario={customScenario} />
-          </div>
+      <div className="pt-14 px-4 md:px-6 lg:px-8 py-3 md:py-4 flex-1 flex flex-col min-h-0 overflow-hidden interview-mobile-optimized">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden interview-content-scaled">
+          <InterviewWrapper interviewType={interviewType} courseTitle={courseTitle} customScenario={customScenario} />
         </div>
       </div>
     </div>

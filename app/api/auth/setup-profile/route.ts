@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       await adminSupabase.from("users").insert({
         ...baseProfile,
         created_at: new Date().toISOString(),
-        preferences: { onboarding_completed: false },
+        preferences: { onboarding_completed: true },
       })
     }
 

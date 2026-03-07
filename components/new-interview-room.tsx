@@ -11,6 +11,12 @@ import { MediaDeviceSelectionDialog } from "./media-device-selection-dialog"
 import { useInterviewContext } from "@/contexts/interview-context"
 import { Mic, Video, RefreshCw, LogOut, Info, Settings } from "lucide-react"
 import { saveQuestionVideo } from "@/lib/interview-video-store"
+import { isChromeOrEdge, BROWSER_REQUIRED_MESSAGE } from "@/lib/browser-compat"
+import type { QuestionItem } from "@/lib/interview-prewarm"
+
+function getQuestionText(q: QuestionItem): string {
+  return typeof q === "string" ? q : q.question
+}
 
 // Credit costs for durations
 const durationCredits: Record<number, number> = {
@@ -68,6 +74,8 @@ export default function NewInterviewRoom({
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const pendingIntroRef = useRef<{ interviewId: string; userId: string } | null>(null)
   const nextQuestionRef = useRef<{ text: string; questionNum: number; audioBase64?: string } | null>(null)
+  /** Pre-loaded Q1, Q2, Q3 from prepare (instant display) */
+  const preloadedQuestionsRef = useRef<Array<{ text: string; audioBase64?: string }>>([])
   const currentQuestionAudioRef = useRef<{ text: string; audioBase64: string } | null>(null)
   
   // Browser native speech recognition refs
@@ -447,8 +455,19 @@ export default function NewInterviewRoom({
           if (preload?.interviewType === interviewType && preload?.interview?.id) {
             sessionStorage.removeItem("interview_preload")
             data = { interview: preload.interview }
-            if (preload.firstQuestion) {
-              nextQuestionRef.current = { text: preload.firstQuestion, questionNum: 1 }
+            // Populate preloaded Q1, Q2, Q3 (instant display)
+            const questions: QuestionItem[] = preload.questions ?? (preload.firstQuestion ? [preload.firstQuestion] : [])
+            const audio: string[] = preload.audio ?? []
+            preloadedQuestionsRef.current = questions.slice(0, 3).map((q, i) => ({
+              text: getQuestionText(q),
+              audioBase64: audio[i],
+            }))
+            if (preloadedQuestionsRef.current.length > 0 && !nextQuestionRef.current) {
+              nextQuestionRef.current = {
+                text: preloadedQuestionsRef.current[0].text,
+                questionNum: 1,
+                audioBase64: preloadedQuestionsRef.current[0].audioBase64,
+              }
             }
           }
         } catch {
@@ -479,7 +498,7 @@ export default function NewInterviewRoom({
         
         data = await response.json()
         prefetchNextQuestion(data.interview.id, 1, [], user.id)
-      } else if (!nextQuestionRef.current) {
+      } else if (!nextQuestionRef.current && preloadedQuestionsRef.current.length === 0) {
         prefetchNextQuestion(data.interview.id, 1, [], user.id)
       }
       
@@ -563,7 +582,7 @@ export default function NewInterviewRoom({
     setIsLoading(true)
     setIsProcessing(true)
     
-    // Pre-fetch next question IMMEDIATELY (while user will answer this one) - makes next Q feel instantaneous
+    // Pre-fetch next question while user answers (Q4+ need API; Q2-Q3 from preload when available)
     if (questionNum < totalQuestions) {
       prefetchNextQuestion(interviewSessionId, questionNum + 1, previousAnswers, userId)
     }
@@ -572,8 +591,14 @@ export default function NewInterviewRoom({
       let questionText: string | null = null
       let preFetchedAudio: string | undefined
 
-      // Use pre-fetched question (and audio if available) if ready
-      if (nextQuestionRef.current?.questionNum === questionNum) {
+      // 1. Use pre-loaded Q1, Q2, Q3 from prepare (instant)
+      const preloaded = preloadedQuestionsRef.current[questionNum - 1]
+      if (preloaded) {
+        questionText = preloaded.text
+        preFetchedAudio = preloaded.audioBase64
+      }
+      // 2. Use pre-fetched question (Q4+) if ready
+      if (!questionText && nextQuestionRef.current?.questionNum === questionNum) {
         questionText = nextQuestionRef.current.text
         preFetchedAudio = nextQuestionRef.current.audioBase64
         nextQuestionRef.current = null
@@ -905,10 +930,10 @@ export default function NewInterviewRoom({
   }, [])
 
   // Auto-start interview when component mounts (settings come from URL params)
+  // Skip if browser is unsupported - only Chrome and Edge work reliably for voice/video
   useEffect(() => {
-    if (!hasStarted && !isLoading) {
-      startInterview()
-    }
+    if (!isChromeOrEdge() || hasStarted || isLoading) return
+    startInterview()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -938,121 +963,137 @@ export default function NewInterviewRoom({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasStarted, tourComplete])
 
+  // Block unsupported browsers (only Chrome and Edge work for voice/video)
+  if (!isChromeOrEdge() && !hasStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-amber-50 flex flex-col items-center justify-center p-6">
+        <div className="max-w-md bg-white rounded-2xl shadow-xl border border-red-200 p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Browser Not Supported</h1>
+          <p className="text-gray-600 mb-6">{BROWSER_REQUIRED_MESSAGE}</p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // Render main layout immediately (no separate loading screen or blur overlay).
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 relative">
+    <div className="h-full min-h-0 flex flex-col bg-gradient-to-br from-purple-50 via-white to-blue-50 relative overflow-hidden">
       {error && !hasStarted && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 max-w-md p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
         </div>
       )}
       {/* Main Interview Layout */}
-      <div className="flex h-screen">
-        {/* Left Side - Avatar Video */}
-        <div className="flex-1 p-6 flex flex-col">
-          {/* Avatar Video Container */}
-          <div className="relative flex-1 rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
-            <AvatarVideoPlayer
-              ref={avatarRef}
-              avatarId={urlInterviewer}
-              className="w-full h-full"
-            />
-            
-            {/* Timer Overlay */}
-            <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full text-white font-mono text-lg">
-              {formatTime(timeRemaining)}
-            </div>
-            
-            {/* Start/End Answer Button */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2" data-tour="tour-start-answer">
-              {!isRecording ? (
-                <button
-                  onClick={handleStartAnswer}
-                  disabled={isAISpeaking || isProcessing}
-                  className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-lg flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Mic className="w-5 h-5" />
-                  START ANSWER
-                </button>
-              ) : (
-                <button
-                  onClick={handleEndAnswer}
-                  className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg flex items-center gap-2 transition-all animate-pulse"
-                >
-                  <div className="w-3 h-3 bg-white rounded-sm" />
-                  END ANSWER
-                </button>
-              )}
-            </div>
-            
-            {/* Recording Indicator */}
-            {isRecording && (
-              <div className="absolute top-4 left-4 bg-red-500 px-3 py-1 rounded-full text-white text-sm font-medium flex items-center gap-2">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                Recording {formatTime(recordingTime)}
+      <div className="flex-1 flex items-center justify-center min-h-0 overflow-hidden p-4">
+        <div className="w-full h-full max-w-full max-h-full flex" style={{ transform: "scale(0.92)", transformOrigin: "center center" }}>
+          {/* Left Side - Avatar Video */}
+          <div className="flex-1 p-3 md:p-4 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="relative flex-1 rounded-2xl overflow-hidden shadow-2xl bg-white">
+                <AvatarVideoPlayer
+                ref={avatarRef}
+                avatarId={urlInterviewer}
+                className="w-full h-full bg-white"
+              />
+              {/* Timer Overlay */}
+              <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full text-white font-mono text-lg">
+                {formatTime(timeRemaining)}
               </div>
-            )}
-          </div>
-          
-          {/* Question Display */}
-          <div className="mt-4 bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-600">Main Question</span>
-              <button
-                onClick={repeatQuestion}
-                disabled={isAISpeaking || isRecording}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 disabled:opacity-50"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Repeat Question
-              </button>
-            </div>
-            <p className="text-lg text-gray-900 font-medium">
-              {isProcessing ? "Generating question..." : currentQuestion || "Waiting for question..."}
-            </p>
-            
-            {/* Listening Indicator with Live Transcript */}
-            {isRecording && (
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center justify-center gap-2 text-red-500">
-                  <Mic className="w-5 h-5 animate-pulse" />
-                  <span className="font-medium">Listening...</span>
-                </div>
-                {liveTranscript && (
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 max-h-24 overflow-y-auto">
-                    {liveTranscript}
-                  </p>
+              {/* Start/End Answer Button */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2" data-tour="tour-start-answer">
+                {!isRecording ? (
+                  <button
+                    onClick={handleStartAnswer}
+                    disabled={isAISpeaking || isProcessing}
+                    className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-lg flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Mic className="w-5 h-5" />
+                    START ANSWER
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleEndAnswer}
+                    className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg flex items-center gap-2 transition-all animate-pulse"
+                  >
+                    <div className="w-3 h-3 bg-white rounded-sm" />
+                    END ANSWER
+                  </button>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Right Side - User Video & Controls */}
-        <div className="w-80 p-6 flex flex-col gap-4">
-          {/* User Video */}
-          <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-900 aspect-video" data-tour="tour-settings">
-            <button
-              onClick={() => setShowMediaSettings(true)}
-              className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-              title="Change camera and microphone"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            <video
-              ref={userVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover mirror"
-              style={{ transform: "scaleX(-1)" }}
-            />
-            {!userStream && (
-              <div className="absolute inset-0 flex items-center justify-center text-white">
-                <Video className="w-8 h-8 opacity-50" />
+              {/* Recording Indicator */}
+              {isRecording && (
+                <div className="absolute top-4 left-4 bg-red-500 px-3 py-1 rounded-full text-white text-sm font-medium flex items-center gap-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  Recording {formatTime(recordingTime)}
+                </div>
+              )}
+            </div>
+            {/* Question Display */}
+            <div className="mt-2 flex-shrink-0 bg-white rounded-xl shadow-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-600">Main Question</span>
+                <button
+                  onClick={repeatQuestion}
+                  disabled={isAISpeaking || isRecording}
+                  className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 disabled:opacity-50"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Repeat Question
+                </button>
               </div>
-            )}
+              <p className="text-lg text-gray-900 font-medium">
+                {isProcessing ? "Generating question..." : currentQuestion || "Waiting for question..."}
+              </p>
+              {isRecording && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-red-500">
+                    <Mic className="w-5 h-5 animate-pulse" />
+                    <span className="font-medium">Listening...</span>
+                  </div>
+                  {liveTranscript && (
+                    <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 max-h-24 overflow-y-auto">
+                      {liveTranscript}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+          </div>
+          {/* Right Side - User Video & Controls */}
+          <div className="w-64 md:w-72 p-3 md:p-4 flex flex-col gap-3 min-h-0">
+            {/* User Video */}
+            <div className="relative rounded-xl overflow-hidden shadow-lg bg-gray-900 aspect-video" data-tour="tour-settings">
+              <button
+                onClick={() => setShowMediaSettings(true)}
+                className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                title="Change camera and microphone"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+              <video
+                ref={userVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover mirror"
+                style={{ transform: "scaleX(-1)" }}
+              />
+              {!userStream && (
+                <div className="absolute inset-0 flex items-center justify-center text-white">
+                  <Video className="w-8 h-8 opacity-50" />
+                </div>
+              )}
+            </div>
           
           {/* Interview Info Card */}
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-white">
@@ -1077,6 +1118,7 @@ export default function NewInterviewRoom({
             <LogOut className="w-5 h-5" />
             EXIT INTERVIEW
           </button>
+        </div>
         </div>
       </div>
       

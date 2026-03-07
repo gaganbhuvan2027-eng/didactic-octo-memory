@@ -115,16 +115,16 @@ const AvatarVideoPlayer = forwardRef<AvatarVideoPlayerRef, AvatarVideoPlayerProp
     }, [playIdle])
 
     return (
-      <div className={`relative w-full h-full bg-gray-900 rounded-2xl overflow-hidden ${className}`}>
+      <div className={`relative w-full h-full bg-white rounded-2xl overflow-hidden ${className}`}>
         {/* Solid background fallback for devices with video codec issues */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" />
+        <div className="absolute inset-0 bg-white" />
         
         {/* Intro Video - plays once at start with audio */}
         <video
           ref={introVideoRef}
           src={videos.intro}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ display: "none", backgroundColor: "#1a1a2e" }}
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{ display: "none", backgroundColor: "#ffffff" }}
           playsInline
           preload="auto"
         />
@@ -133,8 +133,8 @@ const AvatarVideoPlayer = forwardRef<AvatarVideoPlayerRef, AvatarVideoPlayerProp
         <video
           ref={speakingVideoRef}
           src={videos.speaking}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ display: "none", backgroundColor: "#1a1a2e" }}
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{ display: "none", backgroundColor: "#ffffff" }}
           playsInline
           muted
           loop
@@ -145,8 +145,8 @@ const AvatarVideoPlayer = forwardRef<AvatarVideoPlayerRef, AvatarVideoPlayerProp
         <video
           ref={idleVideoRef}
           src={videos.idle}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ backgroundColor: "#1a1a2e" }}
+          className="absolute inset-0 w-full h-full object-contain"
+          style={{ backgroundColor: "#ffffff" }}
           playsInline
           muted
           loop

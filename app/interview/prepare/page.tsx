@@ -98,6 +98,7 @@ function PrepareContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             interviewType: parsed.interviewType,
+            interviewTypeFromPath: nextPath,
             userId: user.id,
             userEmail: user.email,
             userName: user.user_metadata?.name || user.email?.split("@")[0],
@@ -120,6 +121,8 @@ function PrepareContent() {
             JSON.stringify({
               interview: data.interview,
               firstQuestion: data.firstQuestion ?? null,
+              questions: data.questions ?? (data.firstQuestion ? [data.firstQuestion] : []),
+              audio: data.audio ?? [],
               interviewType: parsed.interviewType,
             })
           )

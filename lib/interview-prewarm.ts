@@ -82,8 +82,14 @@ export function parseInterviewUrl(nextUrl: string): {
 
 export const PRELOAD_STORAGE_KEY = "interview_preload"
 
+export type QuestionItem = string | { question: string; options: Array<{ key: string; text: string }>; correctAnswer?: string }
+
 export interface InterviewPreload {
   interview: { id: string; question_count: number }
-  firstQuestion: string | null
+  firstQuestion: QuestionItem | null
+  /** Pre-generated Q1, Q2, Q3 (intro + type/topic) */
+  questions?: QuestionItem[]
+  /** TTS audio base64 for Q1, Q2, Q3 */
+  audio?: string[]
   interviewType: string
 }

@@ -1,3 +1,14 @@
+/* Interview page - fit viewport, no scroll */
+.interview-mobile-landscape {
+  overflow: hidden;
+}
+
+/* Slightly scale down interview content for proportional fit (avatar stays fully visible) */
+.interview-content-scaled {
+  transform: scale(0.97);
+  transform-origin: center center;
+}
+
 /* Mobile-only landscape mode for interview pages */
 @media (max-width: 767px) and (orientation: portrait) {
   .interview-mobile-landscape {

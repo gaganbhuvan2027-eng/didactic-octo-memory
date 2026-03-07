@@ -37,25 +37,23 @@ export default async function DashboardPage() {
       email: user.email,
       name: user.user_metadata?.name || user.email?.split("@")[0],
       created_at: new Date().toISOString(),
-      preferences: { onboarding_completed: false },
+      preferences: { onboarding_completed: true },
     })
 
     if (!insertError) {
-      redirect("/onboarding")
+      userProfile = { preferences: { onboarding_completed: true }, user_type: "user" }
+    } else {
+      // Insert failed (e.g. duplicate) - refetch with admin
+      const admin = await createAdminClient()
+      const { data } = await admin.from("users").select("preferences, user_type").eq("id", user.id).maybeSingle()
+      userProfile = data
     }
-    // Insert failed (e.g. duplicate) - refetch with admin
-    const admin = await createAdminClient()
-    const { data } = await admin.from("users").select("preferences, user_type").eq("id", user.id).maybeSingle()
-    userProfile = data
   }
 
-  // Check if onboarding is completed
-  const preferences = userProfile?.preferences as any
-  const userType = userProfile?.user_type as string;
-
+  const userType = userProfile?.user_type as string
   const userName = user.user_metadata?.name || user.email?.split("@")[0] || "User"
 
-  // Bypass onboarding for institution users
+  // Institution users go to institution dashboard
   if (userType === "institution") {
     return (
       <main className="min-h-screen bg-white">
@@ -67,10 +65,6 @@ export default async function DashboardPage() {
         </div>
       </main>
     )
-  }
-
-  if (!preferences?.onboarding_completed) {
-    redirect("/onboarding")
   }
 
   return (

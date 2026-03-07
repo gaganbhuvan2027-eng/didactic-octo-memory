@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS public.interviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   interview_type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'in_progress',
+  status TEXT NOT NULL DEFAULT 'active',
   started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   completed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

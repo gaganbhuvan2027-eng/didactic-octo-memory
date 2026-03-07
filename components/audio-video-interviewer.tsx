@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import FaceAnalysis, { type FaceAnalysisRef } from "./face-analysis"
 import AudioVisualizer from "./audio-visualizer"
@@ -36,6 +36,7 @@ import { MediaDeviceSelectionDialog } from "./media-device-selection-dialog"
 import { StartInterviewDialog } from "./start-interview-dialog"
 import { Info, Settings } from "lucide-react"
 import { useInterviewContext } from "@/contexts/interview-context"
+import { isChromeOrEdge, BROWSER_REQUIRED_MESSAGE } from "@/lib/browser-compat"
 
 interface AudioVideoInterviewerProps {
   interviewType: string
@@ -175,20 +176,19 @@ export default function AudioVideoInterviewer({
   }
 
   useEffect(() => {
-    // Use scheduledInterviewId prop directly if available, otherwise use state from URL params
     const currentScheduledId = scheduledInterviewId || scheduledInterviewIdState
-
     if (!currentScheduledId) return
+    if (!isChromeOrEdge()) return // Block unsupported browsers - show welcome with warning
 
     console.log("[v0] Starting scheduled interview with ID:", currentScheduledId)
 
     // Bypass setup dialog and start directly
     setShowWelcome(false)
-    setHasStarted(true) // Set hasStarted to true
+    setHasStarted(true)
 
     // Start the interview automatically
     startInterviewWithSettings(selectedDuration!, selectedDifficulty!)
-  }, [scheduledInterviewId, scheduledInterviewIdState]) // Depend on both prop and state
+  }, [scheduledInterviewId, scheduledInterviewIdState])
 
   const [isListening, setIsListening] = useState(false)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -268,6 +268,8 @@ export default function AudioVideoInterviewer({
   const lastProcessedResponseRef = useRef<string>("")
   const lastProcessedQuestionRef = useRef<number>(0)
   const isProcessingRef = useRef<boolean>(false)
+  const nextQuestionRef = useRef<{ text: string; questionNum: number } | null>(null)
+  const preloadedQuestionsRef = useRef<Array<{ text: string }>>([])
 
   const [micPermission, setMicPermission] = useState<"granted" | "denied" | "prompt" | "checking">("checking")
   const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "prompt" | "checking">("checking")
@@ -762,6 +764,37 @@ export default function AudioVideoInterviewer({
 
   // Removed useEffect that used scheduledInterviewId state, now handled by the new useEffect above.
 
+  const prefetchNextQuestion = useCallback(
+    (
+      interviewSessionId: string,
+      questionNum: number,
+      previousAnswers: Array<{ question: string; answer: string }>,
+      userId: string
+    ) => {
+      if (questionNum > totalQuestions) return
+      fetch("/api/interview/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interviewId: interviewSessionId,
+          interviewType,
+          questionNumber: questionNum,
+          previousAnswers,
+          userId,
+          customScenario: customScenario || null,
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Prefetch failed"))))
+        .then((data) => {
+          if (!data?.question) return
+          const text = typeof data.question === "string" ? data.question : data.question?.question
+          if (text) nextQuestionRef.current = { text, questionNum }
+        })
+        .catch(() => {})
+    },
+    [interviewType, customScenario, totalQuestions]
+  )
+
   const generateNextQuestion = async (
     interviewSessionId: string,
     questionNum: number,
@@ -776,13 +809,32 @@ export default function AudioVideoInterviewer({
     setThinkingStage(1)
     setThinkingProgress(0)
 
+    // Pre-fetch next question while user will answer this one
+    if (questionNum < totalQuestions) {
+      prefetchNextQuestion(interviewSessionId, questionNum + 1, previousAnswers, userId)
+    }
+
     try {
-      console.log("[v0] Generating question", questionNum)
-      console.log("[v0] Previous answers count:", previousAnswers.length)
-      if (previousAnswers.length > 0) {
-        console.log("[v0] Last answer:", previousAnswers[previousAnswers.length - 1].answer.substring(0, 50))
+      let questionText: string | null = null
+
+      // 1. Use pre-loaded Q1, Q2, Q3 from prepare (if available)
+      const preloaded = preloadedQuestionsRef.current[questionNum - 1]
+      if (preloaded?.text) {
+        questionText = preloaded.text
       }
-      const response = await fetch("/api/interview/question", {
+      // 2. Use pre-fetched question if ready
+      if (!questionText && nextQuestionRef.current?.questionNum === questionNum) {
+        questionText = nextQuestionRef.current.text
+        nextQuestionRef.current = null
+      }
+      // 3. Fetch if not cached
+      if (!questionText) {
+        console.log("[v0] Generating question", questionNum)
+        console.log("[v0] Previous answers count:", previousAnswers.length)
+        if (previousAnswers.length > 0) {
+          console.log("[v0] Last answer:", previousAnswers[previousAnswers.length - 1].answer.substring(0, 50))
+        }
+        const response = await fetch("/api/interview/question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -811,11 +863,13 @@ export default function AudioVideoInterviewer({
         throw new Error(errorMessage)
       }
 
-      const data = await response.json()
-      console.log("[v0] Question generated:", data.question)
+        const data = await response.json()
+        console.log("[v0] Question generated:", data.question)
+        questionText = typeof data.question === "string" ? data.question : data.question?.question
+      }
 
-      if (data.question) {
-        setCurrentQuestion(data.question)
+      if (questionText) {
+        setCurrentQuestion(questionText)
         setConversationState("ai-speaking")
         setIsAIThinking(false)
 
@@ -829,7 +883,7 @@ export default function AudioVideoInterviewer({
         // Small delay to ensure voice agent is fully stopped
         await new Promise(resolve => setTimeout(resolve, 100))
         
-        const speakResult = speak(data.question)
+        const speakResult = speak(questionText)
         if (speakResult && typeof speakResult.then === "function") {
           speakResult
             .then(() => {
@@ -858,7 +912,7 @@ export default function AudioVideoInterviewer({
           console.log("[v0] Speak didn't return promise, starting listening after delay...")
           if (!isInterviewComplete) {
             // If speak doesn't return promise, estimate speech duration
-            const wordCount = data.question.split(' ').length
+            const wordCount = questionText.split(' ').length
             const estimatedDuration = Math.max(3000, wordCount * 300) // ~300ms per word, min 3 seconds
             console.log("[v0] Estimated speech duration:", estimatedDuration, "ms")
             setTimeout(() => {
@@ -1208,9 +1262,15 @@ export default function AudioVideoInterviewer({
   }
 
   if (showWelcome) {
+    const browserOk = isChromeOrEdge()
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4 md:gap-6 p-4 md:p-8">
         <div className="text-center max-w-2xl w-full">
+          {!browserOk && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+              <p className="text-red-700 font-semibold">⚠️ {BROWSER_REQUIRED_MESSAGE}</p>
+            </div>
+          )}
           <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">Welcome to Your AI Interview</h1>
           <p className="text-base md:text-lg text-gray-600 mb-6 md:mb-8">
             This is a real {interviewType} interview powered by AI. You'll answer questions and receive detailed
@@ -1266,7 +1326,7 @@ export default function AudioVideoInterviewer({
               </li>
               <li className="flex gap-2 md:gap-3">
                 <span className="text-blue-600 font-bold text-lg">💡</span>
-                <span><strong>Note:</strong> For the best experience, we recommend using <strong>Microsoft Edge</strong>.</span>
+                <span><strong>Note:</strong> Use <strong>Chrome</strong> or <strong>Edge</strong> for the best experience. Other browsers are not supported.</span>
               </li>
             </ul>
           </div>
@@ -1457,10 +1517,10 @@ export default function AudioVideoInterviewer({
 
           <button
             onClick={handleStartInterviewClick}
-            disabled={isLoading || !micChecked} // Disable if mic test not complete (camera test is optional)
+            disabled={isLoading || !micChecked || !browserOk}
             className="w-full md:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Starting Interview..." : "Start Interview"}
+            {!browserOk ? "Use Chrome or Edge to Continue" : isLoading ? "Starting Interview..." : "Start Interview"}
           </button>
         </div>
 
@@ -1633,28 +1693,29 @@ export default function AudioVideoInterviewer({
 
   // Removed LandscapePrompt component
   return (
-    <div className="flex flex-col h-full interview-mobile-optimized relative">
-      <div className="flex flex-col lg:flex-row gap-3 md:gap-6 max-w-[1600px] mx-auto w-full flex-1 min-h-0">
-        <div className="flex-1 flex flex-col gap-3 md:gap-4 min-w-0 min-h-0">
+    <div className="flex flex-col h-full min-h-0 interview-mobile-optimized relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center min-h-0 overflow-hidden p-4">
+        <div className="w-full h-full max-w-[1380px] mx-auto flex flex-col lg:flex-row gap-2 md:gap-4" style={{ transform: 'scale(0.92)', transformOrigin: 'center center' }}>
+        <div className="flex-1 flex flex-col gap-2 md:gap-3 min-w-0 min-h-0 overflow-hidden">
           {error && (
             <div className="p-3 md:p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-xs md:text-sm">{error}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 min-h-0">
             <div className="relative rounded-xl overflow-hidden" data-tour="tour-settings">
               <button
-                onClick={() => setShowMediaSettings(true)}
-                className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-                title="Change camera and microphone"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              <FaceAnalysis ref={faceAnalysisRef} videoDeviceId={videoDeviceId} />
+                  onClick={() => setShowMediaSettings(true)}
+                  className="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                  title="Change camera and microphone"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+                <FaceAnalysis ref={faceAnalysisRef} videoDeviceId={videoDeviceId} />
             </div>
 
-            <div className="rounded-xl bg-white p-3 md:p-6 flex flex-col items-center justify-center gap-3 md:gap-6 relative min-h-[200px] md:min-h-0">
+            <div className="rounded-xl bg-white p-2 md:p-4 flex flex-col items-center justify-center gap-2 md:gap-4 relative min-h-[160px] md:min-h-0">
               {voiceAgent.liveTranscript && voiceAgent.currentAnalysis && (
                 <div className="absolute bottom-2 md:bottom-4 left-2 md:left-4 right-2 md:right-4 bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
@@ -1929,13 +1990,13 @@ export default function AudioVideoInterviewer({
           />
         </div>
 
-        <div className="w-full lg:w-96 flex flex-col bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl overflow-hidden lg:flex-shrink-0 lg:max-h-screen lg:h-auto">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-2 md:p-4 flex-shrink-0">
-            <h3 className="font-semibold text-sm md:text-lg">Interview Transcript</h3>
-            <p className="text-blue-100 text-xs md:text-sm">Live conversation history</p>
+        <div className="w-full lg:w-80 flex flex-col bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl overflow-hidden lg:flex-shrink-0 min-h-0">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-2 md:p-3 flex-shrink-0">
+            <h3 className="font-semibold text-sm">Interview Transcript</h3>
+            <p className="text-blue-100 text-xs">Live conversation history</p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-4 scroll-smooth min-h-[300px] max-h-[calc(100vh-12rem)] transcript-scrollbar">
+          <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 scroll-smooth min-h-0 transcript-scrollbar">
             {transcript.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
                 <p>Transcript will appear here once the interview starts</p>

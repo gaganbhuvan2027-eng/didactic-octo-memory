@@ -40,9 +40,11 @@ In Supabase Dashboard → Auth → URL Configuration:
 - **Site URL:** `https://mockzen.com`
 - **Redirect URLs:** Add `https://mockzen.com/auth/confirm` and `https://mockzen.com/auth/callback`
 
-### 3. Email Confirmation Template (Required for India)
+### 3. Email Templates (Required for India)
 
-Supabase's default confirmation link goes to `supabase.co` (blocked). Use a custom template:
+Supabase's default confirmation links go to `supabase.co` (blocked). You must customize each template you use.
+
+**Confirm signup** (email/password signup):
 
 1. Supabase Dashboard → Auth → Email Templates → **Confirm signup**
 2. Replace the confirmation link with:
@@ -51,7 +53,25 @@ Supabase's default confirmation link goes to `supabase.co` (blocked). Use a cust
 <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm your email</a>
 ```
 
-This sends users directly to your site instead of Supabase.
+**Magic link** (passwordless email login):
+
+1. Auth → Email Templates → **Magic link**
+2. Replace the link with:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">Log in</a>
+```
+
+**Reset password** (recovery):
+
+1. Auth → Email Templates → **Reset password**
+2. Replace the link with:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery">Reset your password</a>
+```
+
+**Important:** Use the exact variable names `{{ .TokenHash }}` and `{{ .SiteURL }}` (case-sensitive). Ensure **Site URL** in Auth → URL Configuration matches your app (e.g. `https://mockzen.com`).
 
 ### 4. Deploy
 

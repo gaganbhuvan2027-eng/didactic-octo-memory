@@ -64,7 +64,7 @@ export async function POST(request: Request) {
           .from('interviews')
           .select('id,status')
           .eq('scheduled_interview_id', scheduleId)
-          .in('status', ['in_progress'])
+          .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle()
@@ -78,9 +78,24 @@ export async function POST(request: Request) {
         }
         // else proceed to create a new interview session just in case
       } catch (err) {
-        console.error('[v0] start-scheduled-interview: unexpected error while checking in_progress interview', err)
+        console.error('[v0] start-scheduled-interview: unexpected error while checking active interview', err)
       }
     }
+
+    // Concurrency: only one active interview per user
+    const { data: activeInterview } = await supabase
+      .from("interviews")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
+    if (activeInterview) {
+      return NextResponse.json(
+        { error: "An interview is already running on another device." },
+        { status: 409 }
+      )
+    }
+
     // Create a new interview session and link to the scheduled interview
     let interview: any = null
     try {
@@ -90,7 +105,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           interview_type: scheduledInterview.course,
           difficulty: scheduledInterview.difficulty,
-          status: "in_progress",
+          status: "active",
           scheduled_interview_id: scheduleId,
         })
         .select()
@@ -107,7 +122,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           interview_type: scheduledInterview.course,
           difficulty: scheduledInterview.difficulty,
-          status: "in_progress",
+          status: "active",
         })
         .select()
         .single()

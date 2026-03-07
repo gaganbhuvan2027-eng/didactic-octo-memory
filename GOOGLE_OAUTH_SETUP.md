@@ -1,8 +1,8 @@
-# Custom Google OAuth Setup (India / Cloudflare Proxy)
+# Google OAuth Setup (Supabase Native)
 
-This app uses a **custom Google OAuth flow** that routes through your domain instead of `supabase.co`. This avoids ISP blocks in India where some networks block Supabase.
+This app uses **Supabase's native Google OAuth**. No `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` in `.env.local` — configure everything in Supabase Dashboard.
 
-**Flow:** User → Your app → Google → Your app callback → Supabase (server-side only)
+**Flow:** User → Supabase → Google → Supabase → Your app `/auth/callback`
 
 ## 1. Create Google OAuth Credentials
 
@@ -11,33 +11,25 @@ This app uses a **custom Google OAuth flow** that routes through your domain ins
 3. **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth client ID**
 4. Application type: **Web application**
 5. Add **Authorized redirect URIs**:
-   - Production: `https://didactic-octo-memory-mjg9.vercel.app/api/auth/google/callback`
-   - Local dev: `http://localhost:3000/api/auth/google/callback`
-   - (Add your custom domain if you have one, e.g. `https://yourdomain.com/api/auth/google/callback`)
+   - `https://nrjgfxxjrbmxcsscedbr.supabase.co/auth/v1/callback`
+   - (Add `http://localhost:54321/auth/v1/callback` if using Supabase local dev)
 6. Copy **Client ID** and **Client Secret**
 
-## 2. Add Environment Variables
+## 2. Configure Supabase Dashboard
 
-Add to `.env.local` and Vercel:
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → Your project
+2. **Auth** → **Providers** → **Google** → Enable
+3. Paste **Client ID** and **Client Secret** from step 1
+4. Save
 
-```env
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=https://didactic-octo-memory-mjg9.vercel.app/api/auth/google/callback
-```
+## 3. Supabase Redirect URLs
 
-For local development:
+In **Auth** → **URL Configuration** → **Redirect URLs**, add:
 
-```env
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
-```
-
-## 3. Supabase Configuration
-
-- Google provider must be **enabled** in Supabase Dashboard → Auth → Providers
-- You can keep Supabase’s own Google client for email/password users
-- The custom flow uses `signInWithIdToken` and works with any valid Google id_token
+- `https://www.mockzen.in/auth/callback` (production)
+- `http://localhost:3000/auth/callback` (local dev)
+- Add your Vercel URL if different, e.g. `https://your-app.vercel.app/auth/callback`
 
 ## 4. Deploy
 
-After adding env vars to Vercel, redeploy. Google sign-in will use the custom flow and avoid `supabase.co` in the browser.
+No env vars needed. Redeploy and Google sign-in will work.

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Check, X, Loader2 } from "lucide-react"
+import { isChromeOrEdge } from "@/lib/browser-compat"
 
 interface PracticePrerequisiteModalProps {
   isOpen: boolean
@@ -63,28 +64,17 @@ export function PracticePrerequisiteModal({
       audioOutput: { status: "checking", message: "Checking audio output..." },
     })
 
-    // Check browser - prefer Chrome/Edge for best compatibility
+    // Check browser - only Chrome and Edge are supported (voice/video may not work in Firefox, Safari, etc.)
     setTimeout(() => {
-      const userAgent = navigator.userAgent.toLowerCase()
-      const isChrome = userAgent.includes("chrome") && !userAgent.includes("edg")
-      const isEdge = userAgent.includes("edg")
-      const isFirefox = userAgent.includes("firefox")
-      const isSafari = userAgent.includes("safari") && !userAgent.includes("chrome")
-      
-      if (isChrome || isEdge) {
+      if (isChromeOrEdge()) {
         setChecks(prev => ({
           ...prev,
-          browser: { status: "passed", message: "Web client meets requirements." }
-        }))
-      } else if (isFirefox || isSafari) {
-        setChecks(prev => ({
-          ...prev,
-          browser: { status: "passed", message: "Supported (Chrome preferred)." }
+          browser: { status: "passed", message: "Chrome or Edge detected. Voice and video features are supported." }
         }))
       } else {
         setChecks(prev => ({
           ...prev,
-          browser: { status: "failed", message: "Switch to Chrome or Edge." }
+          browser: { status: "failed", message: "Please use Chrome or Edge. Voice and video features may not work correctly in Firefox, Safari, or other browsers." }
         }))
       }
     }, 500)
@@ -313,10 +303,14 @@ export function PracticePrerequisiteModal({
 
             {/* Status Message */}
             {!isChecking && (
-              <div className={`p-4 rounded-xl ${allChecksPassed ? "bg-green-50 border border-green-200" : "bg-amber-50 border border-amber-200"}`}>
+              <div className={`p-4 rounded-xl ${allChecksPassed ? "bg-green-50 border border-green-200" : checks.browser.status === "failed" ? "bg-red-50 border border-red-200" : "bg-amber-50 border border-amber-200"}`}>
                 {allChecksPassed ? (
                   <p className="text-sm text-green-700 font-medium">
                     ✓ Ready. You can start.
+                  </p>
+                ) : checks.browser.status === "failed" ? (
+                  <p className="text-sm text-red-700 font-medium">
+                    Please switch to Chrome or Edge to use voice and video interviews. Other browsers are not supported.
                   </p>
                 ) : (
                   <p className="text-sm text-amber-700">
@@ -332,14 +326,16 @@ export function PracticePrerequisiteModal({
         <div className="px-6 py-4 border-t border-gray-100">
           <Button
             onClick={onStartInterview}
-            disabled={isChecking}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl text-base font-semibold"
+            disabled={isChecking || checks.browser.status === "failed"}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl text-base font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isChecking ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Running Checks...
               </>
+            ) : checks.browser.status === "failed" ? (
+              "Use Chrome or Edge to Continue"
             ) : (
               "START PRACTICE"
             )}

@@ -60,12 +60,26 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Not enough credits" }, { status: 402 })
         }
 
+        // Concurrency: only one active interview per user
+        const { data: activeInterview } = await supabase
+          .from("interviews")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .maybeSingle()
+        if (activeInterview) {
+          return NextResponse.json(
+            { error: "An interview is already running on another device." },
+            { status: 409 }
+          )
+        }
+
         // IMPORTANT: Create interview FIRST, then deduct credits
         // This prevents losing credits if interview creation fails
         const insertPayload: Record<string, unknown> = {
           user_id: userId,
           interview_type: interviewType,
-          status: "in_progress",
+          status: "active",
           started_at: new Date().toISOString(),
           difficulty: difficulty || "intermediate",
           question_count: questionCount,

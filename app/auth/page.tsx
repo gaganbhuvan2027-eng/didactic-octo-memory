@@ -32,7 +32,18 @@ export default function AuthPage() {
     const params = new URLSearchParams(window.location.search)
     const urlError = params.get("error")
     if (urlError) {
-      setError(decodeURIComponent(urlError))
+      const decoded = decodeURIComponent(urlError)
+      const friendlyMessages: Record<string, string> = {
+        "Missing token or type":
+          "The confirmation link was incomplete. Please click the link in your email again, or request a new confirmation email below.",
+        "Invalid type": "Invalid confirmation link. Please request a new confirmation email.",
+        "auth-failed": "Confirmation failed. The link may have expired. Please request a new confirmation email.",
+        "Auth not configured": "Authentication is not configured. Please contact support.",
+      }
+      setError(friendlyMessages[decoded] ?? decoded)
+      if (["Missing token or type", "Invalid type", "auth-failed"].includes(decoded)) {
+        setEmailConfirmationPending(true)
+      }
       // Clear error from URL without full reload
       window.history.replaceState({}, "", "/auth")
     }
@@ -175,7 +186,7 @@ export default function AuthPage() {
             name: name,
             user_type: "user",
             preferences: {
-              onboarding_completed: false,
+              onboarding_completed: true,
             },
           });
 
@@ -196,9 +207,9 @@ export default function AuthPage() {
         }
 
         if (data.user && data.session) {
-          console.error("[v0] User and session established after signup, redirecting to /onboarding.");
+          console.error("[v0] User and session established after signup, redirecting to dashboard.");
           await new Promise((resolve) => setTimeout(resolve, 500));
-          window.location.href = "/onboarding";
+          window.location.href = "/dashboard";
         } else {
           console.error("[v0] User created but no session, prompting email confirmation.");
           // Mark that we are waiting for email confirmation and show resend option
@@ -295,9 +306,15 @@ export default function AuthPage() {
       await Sentry.startSpan(
         { op: "ui.click", name: "Google Sign In" },
         async () => {
-          // Custom OAuth flow: redirect to our API (never hits supabase.co from browser)
-          // Fixes ISP blocks in India - all Supabase calls happen server-side from Vercel
-          window.location.href = "/api/auth/google"
+          const supabase = createClient()
+          const redirectTo = `${window.location.origin}/auth/callback`
+          const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo },
+          })
+          if (oauthError) throw oauthError
+          if (data?.url) window.location.href = data.url
+          else throw new Error("Google sign-in failed")
         },
       )
     } catch (err: any) {

@@ -2,26 +2,25 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
 
-type EmailOtpType = "signup" | "recovery" | "invite" | "magiclink" | "email_change" | "email"
-
 /**
- * Server-side email confirmation handler.
- * Supabase redirects here with token_hash and type after user clicks the confirmation link.
- * Supports both token_hash and token params (Supabase default uses "token" in some flows).
- * Uses server-side Supabase client (direct to Supabase) - avoids ISP blocks.
+ * Server-side OAuth callback handler.
+ * Exchanges the auth code for a session using PKCE. The code verifier is read from
+ * cookies (set by createBrowserClient when signInWithOAuth was called).
+ * This fixes "PKCE code verifier not found in storage" when using client-side exchange.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const token_hash = searchParams.get("token_hash") ?? searchParams.get("token")
-  const type = searchParams.get("type") as EmailOtpType | null
+  const code = searchParams.get("code")
+  const errorParam = searchParams.get("error")
+  const errorDescription = searchParams.get("error_description")
 
-  if (!token_hash || !type) {
-    return NextResponse.redirect(new URL("/auth?error=Missing+token+or+type", request.url))
+  if (errorParam) {
+    const msg = errorDescription || errorParam
+    return NextResponse.redirect(new URL(`/auth?error=${encodeURIComponent(msg)}`, request.url))
   }
 
-  const validTypes: EmailOtpType[] = ["signup", "recovery", "invite", "magiclink", "email_change", "email"]
-  if (!validTypes.includes(type)) {
-    return NextResponse.redirect(new URL("/auth?error=Invalid+type", request.url))
+  if (!code) {
+    return NextResponse.redirect(new URL("/auth?error=No+code", request.url))
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -51,23 +50,20 @@ export async function GET(request: NextRequest) {
     },
   })
 
-  const { data, error } = await supabase.auth.verifyOtp({ token_hash, type })
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    console.error("[auth/confirm] verifyOtp error:", error.message)
-    return NextResponse.redirect(new URL("/auth?error=auth-failed", request.url))
+    console.error("[auth/callback] exchangeCodeForSession error:", error.message)
+    return NextResponse.redirect(
+      new URL(`/auth?error=${encodeURIComponent(error.message)}`, request.url)
+    )
   }
 
   if (!data.session) {
-    return NextResponse.redirect(new URL("/auth?error=auth-failed", request.url))
+    return NextResponse.redirect(new URL("/auth?error=Sign-in+failed", request.url))
   }
 
-  // Recovery (password reset) → redirect to update-password page
-  if (type === "recovery") {
-    return NextResponse.redirect(new URL("/auth/update-password", request.url))
-  }
-
-  // Setup profile and credits (same as OAuth callback)
+  // Setup profile and credits (same as auth/confirm)
   const origin = request.nextUrl.origin
   try {
     await fetch(`${origin}/api/auth/setup-profile`, {
