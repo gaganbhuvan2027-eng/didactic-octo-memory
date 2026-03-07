@@ -28,7 +28,7 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
-  // Enable instrumentation for environment validation on startup
+  productionBrowserSourceMaps: false,
   experimental: {
     instrumentationHook: true,
     inlineCss: true,
@@ -42,6 +42,18 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
   turbopack: {
     root: process.cwd(),
+    resolveAlias: {
+      "../build/polyfills/polyfill-module": "./lib/modern-polyfill.js",
+      "next/dist/build/polyfills/polyfill-module": "./lib/modern-polyfill.js",
+    },
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "../build/polyfills/polyfill-module": false,
+      "next/dist/build/polyfills/polyfill-module": false,
+    }
+    return config
   },
   async headers() {
     return [
