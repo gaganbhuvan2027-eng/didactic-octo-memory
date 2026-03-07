@@ -31,6 +31,7 @@ const nextConfig = {
   // Enable instrumentation for environment validation on startup
   experimental: {
     instrumentationHook: true,
+    inlineCss: true,
   },
   typescript: {
     ignoreBuildErrors: true,
