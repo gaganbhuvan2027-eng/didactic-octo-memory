@@ -68,17 +68,6 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash") ?? searchParams.get("token")
   const type = searchParams.get("type") as EmailOtpType | null
 
-  // No query params: Supabase may have used hash fragments (default ConfirmationURL).
-  // Serve a client page that reads the hash and completes auth.
-  if (!token_hash || !type) {
-    return createHashFallbackPage(request)
-  }
-
-  const validTypes: EmailOtpType[] = ["signup", "recovery", "invite", "magiclink", "email_change", "email"]
-  if (!validTypes.includes(type)) {
-    return NextResponse.redirect(new URL("/auth?error=Invalid+type", request.url))
-  }
-
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -105,6 +94,21 @@ export async function GET(request: NextRequest) {
       },
     },
   })
+
+  // No query params: Supabase may have already set the session (e.g. via its redirect).
+  // If session exists, redirect to verified page. Otherwise try hash fallback.
+  if (!token_hash || !type) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      return NextResponse.redirect(new URL("/auth/verified", request.url))
+    }
+    return createHashFallbackPage(request)
+  }
+
+  const validTypes: EmailOtpType[] = ["signup", "recovery", "invite", "magiclink", "email_change", "email"]
+  if (!validTypes.includes(type)) {
+    return NextResponse.redirect(new URL("/auth?error=Invalid+type", request.url))
+  }
 
   const { data, error } = await supabase.auth.verifyOtp({ token_hash, type })
 
