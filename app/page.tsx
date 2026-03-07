@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import Navbar from "@/components/navbar"
 import HeroSection from "@/components/home/hero-section"
 import InterviewSelector from "@/components/home/interview-selector"
@@ -7,7 +8,19 @@ import HowItWorks from "@/components/home/how-it-works"
 import CTASection from "@/components/home/cta-section"
 import Footer from "@/components/footer"
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; error_description?: string; error_code?: string }>
+}) {
+  const params = await searchParams
+  const error = params?.error
+  const errorDescription = params?.error_description
+  if (error) {
+    const msg = errorDescription || error
+    redirect(`/auth?error=${encodeURIComponent(msg)}`)
+  }
+
   return (
     <main className="min-h-screen bg-white">
       <Navbar />

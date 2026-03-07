@@ -8,7 +8,8 @@ The application now uses **Supabase Authentication** for secure user management.
 
 ### 1. Authentication Pages
 - **Login/Signup Page** (`/auth`): Users can create accounts and log in with email/password
-- **Auth Callback** (`/auth/callback/route.ts`): Handles email confirmation redirects
+- **Auth Confirm** (`/auth/confirm/route.ts`): Handles magic link and email confirmation → redirects to `/dashboard`
+- **Auth Callback** (`/auth/callback/route.ts`): Handles OAuth (Google) redirects → redirects to `/dashboard`
 
 ### 2. Protected Routes
 - **Middleware** (`middleware.ts`): Automatically refreshes sessions and protects routes
@@ -72,6 +73,10 @@ GRANT ALL ON public.interview_results TO authenticated;
 ### Email Confirmation Not Received
 - **Check**: Supabase email settings in dashboard
 - **Fix**: Enable email confirmation in Supabase Auth settings
+
+### Magic Link / Confirmation Link Not Working
+- **Check**: Supabase **Authentication** → **URL Configuration** → Redirect URLs must include `https://your-domain.com/auth/confirm`
+- **Check**: Email templates must use `/auth/confirm` (not `/onboarding`). See [SUPABASE_EMAIL_SETUP.md](./SUPABASE_EMAIL_SETUP.md)
 
 ## Environment Variables
 

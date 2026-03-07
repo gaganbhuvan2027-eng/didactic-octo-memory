@@ -39,9 +39,15 @@ export default function AuthPage() {
         "Invalid type": "Invalid confirmation link. Please request a new confirmation email.",
         "auth-failed": "Confirmation failed. The link may have expired. Please request a new confirmation email.",
         "Auth not configured": "Authentication is not configured. Please contact support.",
+        "access_denied": "This link has expired or is invalid. Please request a new confirmation or login link.",
+        "Email link is invalid or has expired": "This link has expired or is invalid. Please request a new confirmation or login link.",
       }
       setError(friendlyMessages[decoded] ?? decoded)
-      if (["Missing token or type", "Invalid type", "auth-failed"].includes(decoded)) {
+      if (
+        ["Missing token or type", "Invalid type", "auth-failed", "access_denied", "Email link is invalid or has expired"].includes(
+          decoded
+        )
+      ) {
         setEmailConfirmationPending(true)
       }
       // Clear error from URL without full reload

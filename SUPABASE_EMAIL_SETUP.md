@@ -52,6 +52,12 @@ Customize your email templates in **Authentication** → **Email Templates**:
 - Magic link email
 - Email change confirmation
 
+**Important:** Ensure confirmation and magic link templates use `/auth/confirm`:
+- `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup` (confirmation)
+- `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink` (magic link)
+
+If you previously customized these to point to `/onboarding`, update them to `/auth/confirm` (onboarding was removed; users now go to `/dashboard`).
+
 ## Redirect URLs
 
 Make sure your redirect URLs are configured:
@@ -59,8 +65,12 @@ Make sure your redirect URLs are configured:
 1. Go to **Authentication** → **URL Configuration**
 2. Add your site URL: `https://your-domain.com`
 3. Add redirect URLs:
-   - `https://your-domain.com/auth/callback`
+   - `https://your-domain.com/auth/confirm` — **required** for magic link and email confirmation
+   - `https://your-domain.com/auth/callback` — for OAuth (Google, etc.)
+   - `http://localhost:3000/auth/confirm` (for development)
    - `http://localhost:3000/auth/callback` (for development)
+
+> **Note:** Onboarding was removed. Magic link and signup confirmation now redirect to `/dashboard`. The email link must point to `/auth/confirm` (not `/onboarding`).
 
 ## Current Workaround
 
