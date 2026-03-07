@@ -75,7 +75,7 @@ GRANT ALL ON public.interview_results TO authenticated;
 - **Fix**: Enable email confirmation in Supabase Auth settings
 
 ### Magic Link / Confirmation Link Not Working
-- **Check**: Supabase **Authentication** → **URL Configuration** → Redirect URLs must include `https://your-domain.com/auth/confirm`
+- **Check**: Supabase **Authentication** → **URL Configuration** → Redirect URLs must include `https://www.mockzen.in/auth/confirm`
 - **Check**: Email templates must use `/auth/confirm` (not `/onboarding`). See [SUPABASE_EMAIL_SETUP.md](./SUPABASE_EMAIL_SETUP.md)
 
 ## Environment Variables
@@ -91,6 +91,6 @@ For Google sign-in that avoids `supabase.co` in the browser (fixes blocks in Ind
 
 - `GOOGLE_CLIENT_ID` – from Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` – from Google Cloud Console
-- `GOOGLE_REDIRECT_URI` – e.g. `https://your-domain.com/api/auth/google/callback`
+- `GOOGLE_REDIRECT_URI` – e.g. `https://www.mockzen.in/api/auth/google/callback`
 
 See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for setup.

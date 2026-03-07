@@ -52,9 +52,11 @@ Customize your email templates in **Authentication** → **Email Templates**:
 - Magic link email
 - Email change confirmation
 
-**Important:** Ensure confirmation and magic link templates use `/auth/confirm`:
-- `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup` (confirmation)
-- `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink` (magic link)
+**Important:** Ensure confirmation and magic link templates use `/auth/confirm` with **query params** (not the default `{{ .ConfirmationURL }}`):
+- **Confirm signup:** `<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm your email</a>`
+- **Magic link:** `<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">Log in</a>`
+
+If you use the default `{{ .ConfirmationURL }}`, Supabase redirects with tokens in the URL hash, which can cause "The confirmation link was incomplete" for some setups. The app now supports both flows (query params and hash), but the custom template above is more reliable.
 
 If you previously customized these to point to `/onboarding`, update them to `/auth/confirm` (onboarding was removed; users now go to `/dashboard`).
 
@@ -63,10 +65,10 @@ If you previously customized these to point to `/onboarding`, update them to `/a
 Make sure your redirect URLs are configured:
 
 1. Go to **Authentication** → **URL Configuration**
-2. Add your site URL: `https://your-domain.com`
+2. Add your site URL: `https://www.mockzen.in`
 3. Add redirect URLs:
-   - `https://your-domain.com/auth/confirm` — **required** for magic link and email confirmation
-   - `https://your-domain.com/auth/callback` — for OAuth (Google, etc.)
+   - `https://www.mockzen.in/auth/confirm` — **required** for magic link and email confirmation
+   - `https://www.mockzen.in/auth/callback` — for OAuth (Google, etc.)
    - `http://localhost:3000/auth/confirm` (for development)
    - `http://localhost:3000/auth/callback` (for development)
 
@@ -77,6 +79,16 @@ Make sure your redirect URLs are configured:
 The app now handles both scenarios:
 - **Email confirmation disabled**: Users are immediately logged in after signup
 - **Email confirmation enabled**: Users see a message to check their email, then can login after confirming
+
+## "The confirmation link was incomplete"
+
+This error appears when the auth/confirm route receives a request without `token_hash` and `type` in the URL.
+
+**Causes and fixes:**
+1. **Default Supabase template** – If using `{{ .ConfirmationURL }}`, Supabase may redirect with tokens in the hash. The app now supports this via a client-side fallback. For best results, switch to the custom template above with `token_hash` and `type` in the query string.
+2. **Redirect URLs** – Add `https://www.mockzen.in/auth/confirm` to Supabase → Authentication → URL Configuration → Redirect URLs.
+3. **Email link modification** – Some providers (e.g. Microsoft Safe Links) prefetch or alter links. Disable link scanning for your domain if possible.
+4. **Truncated links** – Long URLs can be cut off. Use the custom template; it produces shorter links than the default.
 
 ## Developer diagnostic endpoint
 

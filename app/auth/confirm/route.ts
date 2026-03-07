@@ -5,6 +5,59 @@ import { NextRequest, NextResponse } from "next/server"
 type EmailOtpType = "signup" | "recovery" | "invite" | "magiclink" | "email_change" | "email"
 
 /**
+ * When Supabase uses default {{ .ConfirmationURL }}, it redirects with session in hash fragments.
+ * The server cannot read hash - serve a client page that parses the hash and completes auth.
+ */
+function createHashFallbackPage(request: NextRequest): NextResponse {
+  const origin = request.nextUrl.origin
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Confirming...</title></head>
+<body>
+<div style="font-family:sans-serif;text-align:center;padding:2rem;">Confirming your sign in...</div>
+<script>
+(function() {
+  var hash = window.location.hash;
+  if (!hash) {
+    window.location.replace("/auth?error=Missing+token+or+type");
+    return;
+  }
+  var params = new URLSearchParams(hash.substring(1));
+  var access_token = params.get("access_token");
+  var refresh_token = params.get("refresh_token");
+  if (!access_token || !refresh_token) {
+    window.location.replace("/auth?error=Missing+token+or+type");
+    return;
+  }
+  fetch("${origin}/api/auth/confirm-hash", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: access_token, refresh_token: refresh_token })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.redirect) {
+      window.location.replace(data.redirect);
+    } else {
+      throw new Error(data.error || "auth failed");
+    }
+  })
+  .catch(function(err) {
+    console.error(err);
+    window.location.replace("/auth?error=auth-failed");
+  });
+})();
+</script>
+</body>
+</html>`
+
+  return new NextResponse(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  })
+}
+
+/**
  * Server-side email confirmation handler.
  * Supabase redirects here with token_hash and type after user clicks the confirmation link.
  * Supports both token_hash and token params (Supabase default uses "token" in some flows).
@@ -15,8 +68,10 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash") ?? searchParams.get("token")
   const type = searchParams.get("type") as EmailOtpType | null
 
+  // No query params: Supabase may have used hash fragments (default ConfirmationURL).
+  // Serve a client page that reads the hash and completes auth.
   if (!token_hash || !type) {
-    return NextResponse.redirect(new URL("/auth?error=Missing+token+or+type", request.url))
+    return createHashFallbackPage(request)
   }
 
   const validTypes: EmailOtpType[] = ["signup", "recovery", "invite", "magiclink", "email_change", "email"]
@@ -81,5 +136,5 @@ export async function GET(request: NextRequest) {
     // Non-fatal - user is still logged in
   }
 
-  return NextResponse.redirect(new URL("/dashboard", request.url))
+  return NextResponse.redirect(new URL("/auth/verified", request.url))
 }
